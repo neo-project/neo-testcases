@@ -1,0 +1,25 @@
+{
+    "rpc_endpoint": "127.0.0.1:10332",
+    "network": 1234567890,
+    "hardforks": {
+        "HF_Aspidochelone": 1,
+        "HF_Basilisk": 1,
+        "HF_Cockatrice": 1,
+        "HF_Domovoi": 1,
+        "HF_Echidna": 1,
+        "HF_Faun": 1
+    },
+    "validators": [
+        "0x18dfcb60a696d083d6046f1ac9f099cc49e110b369f41549339dabde765e769b",
+        "0xd237c26761f90a8d767bc57572891c9e3f471a99873132930bd2e80129d8cc1e",
+        "0x9e4148c23214afc4a221528e8086f512e309abba3b3bc4137290748e8777814b",
+        "0xce61ec17b1a68ddf1af6b3efdd5d2d408f456012a8508af6a344eb4ec0b1fdc3",
+        "0x3b539c393159305e54537e8bd84bc25a99e1177a8797f17d9080bd70f0bcab75",
+        "0x645e9851bb1cff6eb6922c8edfe8a1c296e46ea8923a77bbd41255fb16e51ad5",
+        "0x9716bb59bf716fb51dea01724660e35a5eb810b8a1ffcef9021f70212be4dd0b"
+    ],
+    "others": [
+        "0x0101010101010101010101010101010101010101010101010101010101010101",
+        "0x0202020202020202020202020202020202020202020202020202020202020202"
+    ]
+}
