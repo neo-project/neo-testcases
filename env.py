@@ -16,7 +16,7 @@ from typing import Self
 from dataclasses import asdict, dataclass, field
 from dataclasses_json import dataclass_json
 
-from neo import Account, UInt160
+from neo import Account
 
 
 # Hardfork config, all hardforks are enabled in default.

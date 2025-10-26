@@ -38,7 +38,7 @@ class Testing:
         self.default_sysfee = 1_0000000  # 0.1 GAS
         self.default_netfee = 1_0000000  # 0.1 GAS
 
-    def wait_next_block(self, current_block_index: int, wait_while: str = '', max_wait_seconds: int = 5*60):
+    def wait_next_block(self, current_block_index: int, wait_while: str = '', max_wait_seconds: int = 5*60) -> int:
         start_time = time.time()
         while True:
             block_index = self.client.get_block_index()
@@ -46,7 +46,7 @@ class Testing:
                 break
             if time.time() - start_time > max_wait_seconds:
                 raise TimeoutError(f"Timeout waiting for next block of {current_block_index} after {max_wait_seconds}s")
-            time.sleep(2)
+            time.sleep(3)
 
             elapsed = time.time() - start_time
             self.logger.info(f"Waiting {elapsed:.2f}s for next block of {current_block_index} while {wait_while}")
@@ -57,6 +57,11 @@ class Testing:
 
     def bft_address(self) -> UInt160:
         m = len(self.env.validators) - (len(self.env.validators) - 1) // 3
+        script = create_multisig_redeemscript(m, [v.public_key for v in self.env.validators])
+        return to_script_hash(script)
+
+    def committee_address(self) -> UInt160:
+        m = len(self.env.validators) - (len(self.env.validators) - 1) // 2
         script = create_multisig_redeemscript(m, [v.public_key for v in self.env.validators])
         return to_script_hash(script)
 
@@ -74,18 +79,18 @@ class Testing:
             verification_script=create_signature_redeemscript(public_key)
         )
 
-    def make_multisig_witness(self, key_sign_pairs: list[tuple[ECPoint, bytes]]) -> Witness:
+    def make_multisig_witness(self, key_sign_pairs: list[tuple[ECPoint, bytes]], is_committee: bool = False) -> Witness:
         key_sign_pairs.sort(key=lambda x: x[0])
-        m = len(key_sign_pairs) - (len(key_sign_pairs) - 1) // 3
+        m = len(key_sign_pairs) - (len(key_sign_pairs) - 1) // (2 if is_committee else 3)
         invocation = ScriptBuilder()
-        for i in range(m):  # Must be len(keys) - (len(keys) - 1) // 3
+        for i in range(m):  # Must be len(keys) - (len(keys) - 1) // (2 if is_committee else 3)
             invocation.emit_push_bytes(key_sign_pairs[i][1])
         return Witness(
             invocation_script=invocation.to_bytes(),
             verification_script=create_multisig_redeemscript(m, [k for (k, _) in key_sign_pairs])
         )
 
-    def make_tx(self, account: Account, script: bytes, sysfee: int, netfee: int, valid_until_block: int):
+    def make_tx(self, account: Account, script: bytes, sysfee: int, netfee: int, valid_until_block: int) -> Transaction:
         tx = Transaction(
             version=TX_VERSION_V0,
             nonce=random.randint(0, 0xFFFFFFFF),
@@ -106,8 +111,8 @@ class Testing:
         tx.witnesses = [self.make_witness(sign, account.public_key)]
         return tx
 
-    def make_multisig_tx(self, script: bytes, sysfee: int, netfee: int, valid_until_block: int):
-        account = self.bft_address()
+    def make_multisig_tx(self, script: bytes, sysfee: int, netfee: int, valid_until_block: int, is_committee: bool = False) -> Transaction:
+        account = self.committee_address() if is_committee else self.bft_address()
         tx = Transaction(
             version=TX_VERSION_V0,
             nonce=random.randint(0, 0xFFFFFFFF),
@@ -125,8 +130,27 @@ class Testing:
             tx.serialize_unsigned(writer)
             raw_tx = writer.to_array()
         pairs = [(v.public_key, self.sign(int.from_bytes(v.private_key, 'big'), raw_tx)) for v in self.env.validators]
-        tx.witnesses = [self.make_multisig_witness(pairs)]
+        tx.witnesses = [self.make_multisig_witness(pairs, is_committee)]
         return tx
+
+    def check_execution_result(self, execution: dict, stack: list[tuple[str, str]] = [], exception: str | None = None):
+        assert 'trigger' in execution and execution['trigger'] == 'Application'
+        assert execution['vmstate'] == 'HALT' if exception is None else execution['vmstate'] == 'FAULT'
+        if exception is not None:
+            assert 'exception' in execution and exception in execution['exception']
+        else:
+            assert 'exception' in execution and execution['exception'] is None
+        self.check_stack(execution['stack'], stack)
+
+    def check_stack(self, items: list[dict], expected: list[tuple[str, str]]):
+        assert len(items) == len(expected), f"Expected {len(expected)}, got {len(items)}"
+        for i, item in enumerate(expected):
+            got = items[i]
+            assert 'type' in got and got['type'] == item[0], f"Expected {item[0]}, got {got['type']} at {i}"
+            if item[1] is not None:
+                assert 'value' in got and got['value'] == item[1], f"Expected {item[1]}, got {got['value']} at {i}"
+            else:
+                assert 'value' not in got or got['value'] is None, f"Expected None, got {got['value']} at {i}"
 
     def run(self):
         # Step 0: wait for creating block 1.
