@@ -81,15 +81,7 @@ class GasRpcTransfer(BasicsTesting):
 
         # Check the execution
         execution = application_log['executions'][0]
-        assert 'trigger' in execution and execution['trigger'] == 'Application'
-        assert 'vmstate' in execution and execution['vmstate'] == 'HALT'
-        assert 'exception' in execution and execution['exception'] is None
-        assert 'stack' in execution and len(execution['stack']) == 1
-
-        # Check the stack
-        stack_item = execution['stack'][0]
-        assert 'type' in stack_item and stack_item['type'] == 'Boolean'
-        assert 'value' in stack_item and stack_item['value'] == True
+        self.check_execution_result(execution, stack=[('Boolean', True)])
 
         # Check the notifications
         assert 'notifications' in execution and len(execution['notifications']) == 1
