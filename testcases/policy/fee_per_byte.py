@@ -85,9 +85,9 @@ class FeePerByte(Testing):
         execution = application_log['executions'][0]
         self.check_execution_result(execution, exception='Invalid committee signature')
 
-    def _check_committe_update_fee_per_byte(self):
+    def _check_committe_update_fee_per_byte(self, fee_per_byte: int):
         # Step 9: set the fee_per_byte to FEE_PER_BYTE_V2 by validators
-        tx = self._make_update_fee_per_byte_tx(self.updated_fee_per_byte)
+        tx = self._make_update_fee_per_byte_tx(fee_per_byte)
         tx_hash = self.client.send_raw_tx(tx.to_array())
         tx_id = tx_hash['hash']
         self.logger.info(f"committee update fee_per_byte transaction sent: {tx_id}")
@@ -109,7 +109,7 @@ class FeePerByte(Testing):
         # Step 12: get the fee_per_byte again, it should be FEE_PER_BYTE_V2.
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getFeePerByte", [])
         self.logger.info(f"Get updated fee_per_byte result: {result}")
-        self.check_stack(result['stack'], [('Integer', str(self.updated_fee_per_byte))])
+        self.check_stack(result['stack'], [('Integer', str(fee_per_byte))])
 
     def _check_fee_per_byte_range(self):
         # Step 13: check the fee_per_byte  range
@@ -158,33 +158,11 @@ class FeePerByte(Testing):
         self._check_invoke_function_update_fee_per_byte()
         self._check_no_permission_update_fee_per_byte()
         self._check_fee_per_byte_range()
-        self._check_committe_update_fee_per_byte()
+        self._check_committe_update_fee_per_byte(self.updated_fee_per_byte)
 
     # Post test: set the fee_per_byte to original fee_per_byte.
     def post_test(self):
-        # Step 1: set the fee_per_byte to original fee_per_byte
-        block_index = self.client.get_block_index()
-        script = ScriptBuilder().emit_dynamic_call(
-            script_hash=POLICY_CONTRACT_HASH,
-            method='setFeePerByte',
-            call_flags=CallFlags.STATES,
-            args=[self.original_fee_per_byte],
-        ).to_bytes()
-
-        tx = self.make_multisig_tx(script, self.default_sysfee, self.default_netfee,
-                                   block_index+10, is_committee=True)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
-        self.logger.info(f"set the fee_per_byte to original value transaction sent: {tx_id}")
-
-        # Step 2: wait for the next block
-        block_index = self.client.get_block_index()
-        self.wait_next_block(block_index)
-
-        # Step 3: get the fee_per_byte again, it should be original fee_per_byte.
-        result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getFeePerByte", [])
-        self.logger.info(f'Get final fee_per_byte result: {result}')
-        self.check_stack(result['stack'], [('Integer', str(self.original_fee_per_byte))])
+        self._check_committe_update_fee_per_byte(self.original_fee_per_byte)
 
 
 # Run with: python3 -B -m testcases.policy.fee_per_byte

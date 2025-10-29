@@ -89,6 +89,9 @@ class RpcClient:
     def get_mempool(self, include_unverified: bool = False) -> dict:
         return self._send("getrawmempool", [include_unverified])
 
+    def calculate_network_fee(self, raw_tx: bytes) -> dict:
+        return self._send("calculatenetworkfee", [base64.b64encode(raw_tx).decode('utf-8')])
+
     def get_application_log(self, tx_hash: str, trigger_type: str = "") -> dict:
         """
         From Plugin ApplicationLogs.
