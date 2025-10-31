@@ -13,11 +13,11 @@ import hashlib
 from typing import Self
 from dataclasses import asdict, dataclass
 
-from neo import UInt160, CallFlags
+from neo import UInt160, CallFlags, CONTRACT_HASHES
 
-NEO_CONTRACT_HASH = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"
-GAS_CONTRACT_HASH = "0xd2a4cff31913016155e38e474a2c06d08be276cf"
-POLICY_CONTRACT_HASH = "0xcc5e4edd9f5f8dba8bb65734541df7a1c081c67b"
+NEO_CONTRACT_HASH = str(CONTRACT_HASHES.NEO_TOKEN)
+GAS_CONTRACT_HASH = str(CONTRACT_HASHES.GAS_TOKEN)
+POLICY_CONTRACT_HASH = str(CONTRACT_HASHES.POLICY)
 
 
 @dataclass

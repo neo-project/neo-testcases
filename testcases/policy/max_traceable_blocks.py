@@ -24,7 +24,7 @@ class MaxTraceableBlocks(Testing):
     def __init__(self, loggerName: str = "MaxTraceableBlocks"):
         super().__init__(loggerName)
         self.original_max_traceable_blocks = 2102400
-        self.updated_max_traceable_blocks = 2100000
+        self.updated_max_traceable_blocks = 2102400 - 1
         self.min_max_traceable_blocks = 1
         self.max_max_traceable_blocks = 2102400
 
@@ -46,7 +46,7 @@ class MaxTraceableBlocks(Testing):
         # self.check_stack(result['stack'], [('Integer', str(self.original_max_traceable_blocks))])
 
         self.original_max_traceable_blocks = int(result['stack'][0]['value'])
-        self.updated_max_traceable_blocks = self.original_max_traceable_blocks - 100
+        self.updated_max_traceable_blocks = self.original_max_traceable_blocks - 1
 
     def _check_invoke_function_update_max_traceable_blocks(self):
         # Step 2: set the max_traceable_blocks to UPDATED_MAX_TRACEABLE_BLOCKS by rpc invoke_function.
@@ -189,9 +189,9 @@ class MaxTraceableBlocks(Testing):
         self.check_execution_result(
             execution, exception='MaxTraceableBlocks must be larger than MaxValidUntilBlockIncrement')
 
-    def _check_committee_update_max_traceable_blocks(self):
+    def _check_committee_update_max_traceable_blocks(self, max_traceable_blocks: int):
         # Step 19: set the max_traceable_blocks to UPDATED_MAX_TRACEABLE_BLOCKS by validators
-        tx = self._make_update_max_traceable_blocks_tx(self.updated_max_traceable_blocks)
+        tx = self._make_update_max_traceable_blocks_tx(max_traceable_blocks)
         tx_hash = self.client.send_raw_tx(tx.to_array())
         tx_id = tx_hash['hash']
         self.logger.info(f"committee update max_traceable_blocks transaction sent: {tx_id}")
@@ -213,14 +213,14 @@ class MaxTraceableBlocks(Testing):
         # Step 22: get the max_traceable_blocks again, it should be UPDATED_MAX_TRACEABLE_BLOCKS.
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getMaxTraceableBlocks", [])
         self.logger.info(f"Get updated max_traceable_blocks result: {result}")
-        self.check_stack(result['stack'], [('Integer', str(self.updated_max_traceable_blocks))])
+        self.check_stack(result['stack'], [('Integer', str(max_traceable_blocks))])
 
     def run_test(self):
         self._get_original_max_traceable_blocks()
         self._check_invoke_function_update_max_traceable_blocks()
         self._check_no_permission_update_max_traceable_blocks()
         self._check_max_traceable_blocks_range()
-        self._check_committee_update_max_traceable_blocks()
+        self._check_committee_update_max_traceable_blocks(self.updated_max_traceable_blocks)
         self._check_max_traceable_blocks_decrease_validation()
         self._check_max_traceable_blocks_greater_than_max_valid_until_block_increment()
 

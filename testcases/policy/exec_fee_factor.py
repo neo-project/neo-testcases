@@ -85,9 +85,9 @@ class ExecFeeFactor(Testing):
         execution = application_log['executions'][0]
         self.check_execution_result(execution, exception='Invalid committee signature')
 
-    def _check_committe_update_exec_fee_factor(self):
+    def _check_committe_update_exec_fee_factor(self, exec_fee_factor: int):
         # Step 9: set the exec fee factor to UPDATED_EXEC_FEE_FACTOR by validators
-        tx = self._make_update_exec_fee_factor_tx(self.updated_exec_fee_factor)
+        tx = self._make_update_exec_fee_factor_tx(exec_fee_factor)
         tx_hash = self.client.send_raw_tx(tx.to_array())
         tx_id = tx_hash['hash']
         self.logger.info(f"committee update exec_fee_factor transaction sent: {tx_id}")
@@ -109,7 +109,7 @@ class ExecFeeFactor(Testing):
         # Step 12: get the exec fee factor again, it should be UPDATED_EXEC_FEE_FACTOR.
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecFeeFactor", [])
         self.logger.info(f"Get updated exec fee factor result: {result}")
-        self.check_stack(result['stack'], [('Integer', str(self.updated_exec_fee_factor))])
+        self.check_stack(result['stack'], [('Integer', str(exec_fee_factor))])
 
     def _check_exec_fee_factor_range(self):
         # Step 13: check the exec fee factor range
@@ -158,33 +158,11 @@ class ExecFeeFactor(Testing):
         self._check_invoke_function_update_exec_fee_factor()
         self._check_no_permission_update_exec_fee_factor()
         self._check_exec_fee_factor_range()
-        self._check_committe_update_exec_fee_factor()
+        self._check_committe_update_exec_fee_factor(self.updated_exec_fee_factor)
 
     # Post test: set the exec fee factor to original exec fee factor.
     def post_test(self):
-        # Step 1: set the exec fee factor to original exec fee factor
-        block_index = self.client.get_block_index()
-        script = ScriptBuilder().emit_dynamic_call(
-            script_hash=POLICY_CONTRACT_HASH,
-            method='setExecFeeFactor',
-            call_flags=CallFlags.STATES,
-            args=[self.original_exec_fee_factor],
-        ).to_bytes()
-
-        tx = self.make_multisig_tx(script, self.default_sysfee, self.default_netfee,
-                                   block_index+10, is_committee=True)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
-        self.logger.info(f"set the exec_fee_factor to original value transaction sent: {tx_id}")
-
-        # Step 2: wait for the next block
-        block_index = self.client.get_block_index()
-        self.wait_next_block(block_index)
-
-        # Step 3: get the exec fee factor again, it should be original exec fee factor.
-        result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecFeeFactor", [])
-        self.logger.info(f'Get final exec fee factor result: {result}')
-        self.check_stack(result['stack'], [('Integer', str(self.original_exec_fee_factor))])
+        self._check_committe_update_exec_fee_factor(self.original_exec_fee_factor)
 
 
 # Run with: python3 -B -m testcases.policy.exec_fee_factor
