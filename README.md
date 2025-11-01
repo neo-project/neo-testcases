@@ -43,3 +43,13 @@ This project contains the functional testcases for neo blockchain.
   ./run-localnet-nodes.sh stop  # or ./run-localnet-nodes.ps1 stop on Windows
   rm -rf localnet_nodes
   ```
+
+  ## How to add a new testcase
+  1. Create a new file in the `testcases/it's group` directory.
+  2. Create a new class in the new file, inherit from the `Testing` class.
+  3. Implement the `run_test` method, which contains the test steps.
+  4. Implement the `pre_test`and `post_test` methods if needed, which contains the pre-test, test and post-test steps.
+  5. If group is not in the `run_tests.sh` or `run_tests.ps1` file, add it to the file.
+  6. Run the tests and check the results.
+  7. Format the new file with pep8(with 120 characters per line) style.
+  
