@@ -18,8 +18,9 @@ from testcases.basics.base import BasicsTesting
 # and then check the NEO balance and the transaction execution result.
 # Expect Result: The transaction execution is OK, and the NEO balance is as expected.
 class NeoRpcTransfer(BasicsTesting):
+
     def __init__(self):
-        super().__init__(__class__.__name__)
+        super().__init__("NeoRpcTransfer")
 
     def run_test(self):
         # Step 1: Build the transfer script

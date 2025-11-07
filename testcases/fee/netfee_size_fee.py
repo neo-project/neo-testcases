@@ -18,8 +18,9 @@ from testcases.fee.base import FeeTesting
 #  1. The netfee should be increased when the tx size is increased.
 # Expect Result: The checking netfee is correct.
 class NetworkFeeSizeFee(FeeTesting):
-    def __init__(self, loggerName: str = "NetworkFeeSizeFee"):
-        super().__init__(loggerName)
+
+    def __init__(self):
+        super().__init__("NetworkFeeSizeFee")
 
         self.update_fee_per_byte = self.fee_per_byte + 100
 

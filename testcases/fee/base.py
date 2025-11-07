@@ -15,6 +15,7 @@ from testcases.testing import Testing
 
 
 class FeeTesting(Testing):
+
     def __init__(self, loggerName: str = "FeeTesting"):
         super().__init__(loggerName)
         self.exec_fee_factor = 30

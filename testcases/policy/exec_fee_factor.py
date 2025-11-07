@@ -18,8 +18,9 @@ from testcases.testing import Testing
 #  3. The exec_fee_factor should in range [min_exec_fee_factor, max_exec_fee_factor].
 # Expect Result: The exec_fee_factor policy is working as expected.
 class ExecFeeFactor(Testing):
-    def __init__(self, loggerName: str = "ExecFeeFactor"):
-        super().__init__(loggerName)
+
+    def __init__(self):
+        super().__init__("ExecFeeFactor")
         self.original_exec_fee_factor = 30
         self.updated_exec_fee_factor = 20
         self.min_exec_fee_factor = 1

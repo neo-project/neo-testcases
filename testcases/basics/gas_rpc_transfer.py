@@ -18,8 +18,9 @@ from testcases.basics.base import BasicsTesting
 # and then check GAS balance and the transaction execution result.
 # Expect Result: The transaction execution is OK, and GAS transfered as expected.
 class GasRpcTransfer(BasicsTesting):
+
     def __init__(self):
-        super().__init__(__class__.__name__)
+        super().__init__("GasRpcTransfer")
 
     def run_test(self):
         # Step 1: Build the transfer script
