@@ -20,7 +20,7 @@ from testcases.basics.base import BasicsTesting
 class NeoRpcTransferMultiSign(BasicsTesting):
 
     def __init__(self):
-        super().__init__(__class__.__name__)
+        super().__init__("NeoRpcTransferMultiSign")
 
     def run_test(self):
         # Step 1: Build the transfer script

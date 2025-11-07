@@ -18,8 +18,9 @@ from testcases.testing import Testing
 #  3. The fee_per_byte should in range [min_fee_per_byte, max_fee_per_byte].
 # Expect Result: The fee_per_byte policy is working as expected.
 class FeePerByte(Testing):
-    def __init__(self, loggerName: str = "FeePerByte"):
-        super().__init__(loggerName)
+
+    def __init__(self):
+        super().__init__("FeePerByte")
         self.original_fee_per_byte = 1000
         self.updated_fee_per_byte = 500
         self.min_fee_per_byte = 0

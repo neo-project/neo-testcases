@@ -17,8 +17,9 @@ from testcases.fee.base import FeeTesting
 # Operation: Send a tx, the consumed sysfee depends on the opcode and operations.
 # Expect Result: The consumed sysfee is correct.
 class SystemFeeConsumed(FeeTesting):
-    def __init__(self, loggerName: str = "SystemFeeConsumed"):
-        super().__init__(loggerName)
+
+    def __init__(self):
+        super().__init__("SystemFeeConsumed")
         self.price_push1 = 1
 
     def run_test(self):

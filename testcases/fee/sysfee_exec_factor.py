@@ -19,8 +19,9 @@ from testcases.fee.base import FeeTesting
 # 2. If the exec_fee_factor changed, the consumed sysfee should be changed.
 # Expect Result: The consumed sysfee is correct.
 class SystemFeeExecFactor(FeeTesting):
-    def __init__(self, loggerName: str = "SystemFeeExecFactor"):
-        super().__init__(loggerName)
+
+    def __init__(self):
+        super().__init__("SystemFeeExecFactor")
         self.price_push1 = 1
         self.updated_exec_fee_factor = self.exec_fee_factor + 10
 

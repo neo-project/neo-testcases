@@ -21,8 +21,8 @@ from testcases.testing import Testing
 # Expect Result: The max_traceable_blocks policy is working as expected.
 class MaxTraceableBlocks(Testing):
 
-    def __init__(self, loggerName: str = "MaxTraceableBlocks"):
-        super().__init__(loggerName)
+    def __init__(self):
+        super().__init__("MaxTraceableBlocks")
         self.original_max_traceable_blocks = 2102400
         self.updated_max_traceable_blocks = 2102400 - 1
         self.min_max_traceable_blocks = 1
