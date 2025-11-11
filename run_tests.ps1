@@ -4,6 +4,7 @@ Write-Host "$(Get-Date) - Running tests..."
 
 $groups = @(
     "basics"
+    "crypto"
     "fee"
     "policy"
 )

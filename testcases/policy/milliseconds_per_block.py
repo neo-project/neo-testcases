@@ -18,10 +18,10 @@ from testcases.testing import Testing
 #  3. The milliseconds_per_block should in range [min_millis_per_block, max_millis_per_block].
 #  4. The setMillisecondsPerBlock must called with CallFlags.STATES | CallFlags.ALLOW_NOTIFY.
 # Expect Result: The milliseconds_per_block policy is working as expected.
-
 class MillisecondsPerBlock(Testing):
-    def __init__(self, loggerName: str = "MillisecondsPerBlock"):
-        super().__init__(loggerName)
+
+    def __init__(self):
+        super().__init__("MillisecondsPerBlock")
         self.original_millis_per_block = 15_000
         self.updated_millis_per_block = 10_000
         self.min_millis_per_block = 1

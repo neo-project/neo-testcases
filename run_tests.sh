@@ -4,6 +4,7 @@
 echo "$(date) - Running tests..."
 groups=(
     "basics"
+    "crypto"
     "fee"
     "policy"
 )
