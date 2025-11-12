@@ -70,7 +70,7 @@ class Ripemd160Testing(Testing):
         block_index = self.client.get_block_index()
         tx = self.make_tx(source, script, self.default_sysfee, self.default_netfee, block_index + 10)
         tx_id = self.client.send_raw_tx(tx.to_array())['hash']
-        self.logger.info(f"Tx invoke invalid ripemd160 transaction sent: {tx_id}")
+        self.logger.info(f"Tx null-bytes ripemd160 transaction sent: {tx_id}")
 
         block_index = self.client.get_block_index()
         self.wait_next_block(block_index)
