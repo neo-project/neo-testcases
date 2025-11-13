@@ -79,9 +79,11 @@ class RpcClient:
                                       [ContractParameter(type="Hash160", value=account)])
         return int(result['stack'][0]['value'])
 
-    def invoke_function(self, script_hash: str | UInt160, method: str, args: list[ContractParameter] = []) -> any:
+    def invoke_function(
+            self, script_hash: str | UInt160, method: str, args: list[ContractParameter | dict] = []) -> any:
         script_hash = str(script_hash) if isinstance(script_hash, UInt160) else script_hash
-        return self._send("invokefunction", [script_hash, method, [arg.to_dict() for arg in args]])
+        return self._send("invokefunction",
+                          [script_hash, method, [x if isinstance(x, dict) else x.to_dict() for x in args]])
 
     def send_raw_tx(self, raw_tx: bytes):
         return self._send("sendrawtransaction", [base64.b64encode(raw_tx).decode('utf-8')])

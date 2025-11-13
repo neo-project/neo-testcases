@@ -19,8 +19,8 @@ from testcases.testing import Testing
 # Expect Result: The max_valid_until_block_increment policy is working as expected.
 class MaxValidUntilBlockIncrement(Testing):
 
-    def __init__(self, loggerName: str = "MaxValidUntilBlockIncrement"):
-        super().__init__(loggerName)
+    def __init__(self):
+        super().__init__("MaxValidUntilBlockIncrement")
         self.original_max_valid_until_block_increment = 5760
         self.updated_max_valid_until_block_increment = 5000
         self.min_max_valid_until_block_increment = 1

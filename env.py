@@ -51,11 +51,8 @@ class Env:
     # Other accounts for testing
     others: list[Account] = field(default_factory=list)
 
-    @classmethod
-    def from_testbed(cls, testbed: str = os.getenv('NEO_TESTBED', 'testbed/localnet.json')) -> Self:
-        with open(testbed, 'r') as f:
-            data = json.load(f)
-        return cls.from_dict(data)
+    def is_hardfork_enabled(self, hardfork: str, block_index: int) -> bool:
+        return hasattr(self.hardforks, hardfork) and getattr(self.hardforks, hardfork) >= block_index
 
     def as_dict(self) -> dict:
         return {
@@ -65,6 +62,12 @@ class Env:
             "validators": ['0x' + v.private_key[::-1].to_hex() for v in self.validators],
             "others": ['0x' + o.private_key[::-1].to_hex() for o in self.others]
         }
+
+    @classmethod
+    def from_testbed(cls, testbed: str = os.getenv('NEO_TESTBED', 'testbed/localnet.json')) -> Self:
+        with open(testbed, 'r') as f:
+            data = json.load(f)
+        return cls.from_dict(data)
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:

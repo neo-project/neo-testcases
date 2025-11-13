@@ -18,8 +18,9 @@ from testcases.testing import Testing
 #  3. The storage_price should in range [min_storage_price, max_storage_price].
 # Expect Result: The storage_price policy is working as expected.
 class StoragePrice(Testing):
-    def __init__(self, loggerName: str = "StoragePrice"):
-        super().__init__(loggerName)
+
+    def __init__(self):
+        super().__init__("StoragePrice")
         self.original_storage_price = 100_000
         self.updated_storage_price = 50_000
         self.min_storage_price = 1
