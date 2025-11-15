@@ -107,4 +107,4 @@ class NativeNep17(BasicsTesting):
 # Run with: python3 -B -m testcases.basics.native_nep17
 if __name__ == "__main__":
     test = NativeNep17()
-    test.run_test()
+    test.run()

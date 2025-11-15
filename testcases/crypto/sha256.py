@@ -1,6 +1,6 @@
 # Copyright (C) 2015-2025 The Neo Project.
 #
-# testcases/sha256.py file belongs to the neo project and is free
+# testcases/crypto/sha256.py file belongs to the neo project and is free
 # software distributed under the MIT software license, see the
 # accompanying file LICENSE in the main directory of the
 # repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,7 +10,6 @@
 # modifications are permitted.
 
 import base64
-from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -42,24 +41,12 @@ class Sha256Testing(Testing):
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "sha256",
                                              [ContractParameter(type="ByteArray", value=None)])
         self.logger.info(f"Invoke sha256 with null bytes result: {result}")
-        if self.env.is_hardfork_enabled(Hardforks.HF_Faun, block_index):
-            expected = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-            hash = base64.b64decode(result['stack'][0]['value']).hex()
-            assert hash == expected, f"Expected '{expected}', got {hash}"
-        else:
-            # SHA256 failed if the argument is null before HF_Faun
-            assert 'exception' in result and result['exception'] is not None
+        assert 'exception' in result and result['exception'] is not None
 
         # Step 3: invoke the sha256 hash function with null
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "sha256", [{'type': 'ByteArray'}])
         self.logger.info(f"Invoke sha256 with null result: {result}")
-        if self.env.is_hardfork_enabled(Hardforks.HF_Faun, block_index):
-            expected = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-            hash = base64.b64decode(result['stack'][0]['value']).hex()
-            assert hash == expected, f"Expected '{expected}', got {hash}"
-        else:
-            # SHA256 failed if the argument is null before HF_Faun
-            assert 'exception' in result and result['exception'] is not None
+        assert 'exception' in result and result['exception'] is not None
 
     def _check_tx_invoke_sha256(self):
         # Step 1: create a transaction to invoke the sha256 hash function with null bytes
@@ -82,13 +69,7 @@ class Sha256Testing(Testing):
         execution = application_log['executions'][0]
         assert 'trigger' in execution and execution['trigger'] == 'Application'
         assert execution['vmstate'] == 'FAULT'
-        if self.env.is_hardfork_enabled(Hardforks.HF_Faun, block_index):
-            expected = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-            hash = base64.b64decode(execution['stack'][0]['value']).hex()
-            assert hash == expected, f"Expected '{expected}', got {hash}"
-        else:
-            # SHA256 failed if the argument is null before HF_Faun
-            assert 'exception' in execution and execution['exception'] is not None
+        assert 'exception' in execution and execution['exception'] is not None
 
         # Step 2: create a transaction to invoke the sha256 hash function with valid bytes
         script = ScriptBuilder().emit_dynamic_call(
