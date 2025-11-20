@@ -7,3 +7,5 @@ requests >= 2.32.0
 dataclasses_json >= 0.6
 cryptography >= 46.0.0
 neo-mamba >= 3.0.1
+ecdsa >= 0.19.0
+safe-pysha3 >= 1.0.5
