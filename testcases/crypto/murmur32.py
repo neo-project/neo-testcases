@@ -22,30 +22,25 @@ class Murmur32Testing(Testing):
     def __init__(self):
         super().__init__("Murmur32Testing")
 
+    def _check_murmur32_result_stack(self, stack: list, expected_hash: str):
+        assert len(stack) == 1, f"Expected 1 item in stack, got {len(stack)}"
+
+        assert stack[0]['type'] == "ByteString", f"Expected ByteString, got {stack[0]['type']}"
+        hash = base64.b64decode(stack[0]['value']).hex()
+        assert hash == expected_hash, f"Expected {expected_hash}, got {hash}"
+
+    def _check_murmur32_null_checking(self):
+        # Step 2: invoke the murmur32 hash function with null bytes
+        params = [ContractParameter(type="ByteArray", value=None), ContractParameter(type="Integer", value=0)]
+        result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "murmur32", params)
+        self._check_murmur32_result_stack(result['stack'], '00000000')
+
     def _check_invoke_murmur32(self):
         # Step 1: invoke the murmur32 hash function
         data = base64.b64encode(b"hello world").decode('utf-8')
         params = [ContractParameter(type="ByteArray", value=data), ContractParameter(type="Integer", value=0)]
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "murmur32", params)
-        self.logger.info(f"Invoke murmur32 result: {result}")
-
-        stack = result['stack']
-        assert len(stack) == 1, f"Expected 1 item in stack, got {len(stack)}"
-        assert stack[0]['type'] == "ByteString", f"Expected ByteString, got {stack[0]['type']}"
-
-        hash = base64.b64decode(stack[0]['value']).hex()
-        assert hash == '0f8f925e', f"Expected '0f8f925e', got {hash}"
-
-        # Step 2: invoke the murmur32 hash function with null bytes
-        params = [ContractParameter(type="ByteArray", value=None), ContractParameter(type="Integer", value=0)]
-        result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "murmur32", params)
-
-        stack = result['stack']
-        assert len(stack) == 1, f"Expected 1 item in stack, got {len(stack)}"
-        assert stack[0]['type'] == "ByteString", f"Expected ByteString, got {stack[0]['type']}"
-
-        hash = base64.b64decode(stack[0]['value']).hex()
-        assert hash == '00000000', f"Expected '00000000', got {hash}"
+        self._check_murmur32_result_stack(result['stack'], '0f8f925e')
 
     def _check_tx_invoke_murmur32(self):
         # Step 1: create a transaction to invoke the sha256 hash function with null bytes
@@ -68,8 +63,7 @@ class Murmur32Testing(Testing):
         execution = application_log['executions'][0]
         assert 'trigger' in execution and execution['trigger'] == 'Application'
         assert execution['vmstate'] == 'HALT'
-        hash = base64.b64decode(execution['stack'][0]['value']).hex()
-        assert hash == '00000000', f"Expected '00000000', got {hash}"
+        self._check_murmur32_result_stack(execution['stack'], '00000000')
 
         # Step 2: create a transaction to invoke the murmur32 hash function with valid bytes
         script = ScriptBuilder().emit_dynamic_call(
@@ -87,10 +81,10 @@ class Murmur32Testing(Testing):
         execution = application_log['executions'][0]
         assert 'trigger' in execution and execution['trigger'] == 'Application'
         assert execution['vmstate'] == 'HALT'
-        hash = base64.b64decode(execution['stack'][0]['value']).hex()
-        assert hash == '0f8f925e', f"Expected '0f8f925e', got {hash}"
+        self._check_murmur32_result_stack(execution['stack'], '0f8f925e')
 
     def run_test(self):
+        self._check_murmur32_null_checking()
         self._check_invoke_murmur32()
         self._check_tx_invoke_murmur32()
 

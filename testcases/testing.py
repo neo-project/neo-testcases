@@ -65,13 +65,16 @@ class Testing:
         script = create_multisig_redeemscript(m, [v.public_key for v in self.env.validators])
         return to_script_hash(script)
 
-    def sign(self, private_key: int | bytes, data: bytes) -> bytes:
+    def sign_message(self, private_key: int | bytes, message: bytes) -> bytes:
         private_key = int.from_bytes(private_key, 'big') if isinstance(private_key, bytes) else private_key
-        sign_data = self.env.network.to_bytes(4, 'little') + hashlib.sha256(data).digest()
         sk = ec.derive_private_key(private_key, ec.SECP256R1(), default_backend())
-        der = sk.sign(sign_data, ec.ECDSA(hashes.SHA256()))
+        der = sk.sign(message, ec.ECDSA(hashes.SHA256()))
         (r, s) = decode_dss_signature(der)
         return r.to_bytes(32, 'big') + s.to_bytes(32, 'big')
+
+    def sign(self, private_key: int | bytes, data: bytes) -> bytes:
+        sign_data = self.env.network.to_bytes(4, 'little') + hashlib.sha256(data).digest()
+        return self.sign_message(private_key, sign_data)
 
     def make_witness(self, sign: bytes, public_key: ECPoint) -> Witness:
         return Witness(

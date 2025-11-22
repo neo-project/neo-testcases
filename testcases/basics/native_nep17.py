@@ -29,7 +29,7 @@ from testcases.basics.base import BasicsTesting
 class NativeNep17(BasicsTesting):
     def __init__(self):
         super().__init__("NativeNep17")
-        self.gas_per_block = 5 * 1000_0000  # 5 GAS per block. Why is 5_000_0000, not 5_0000_0000 ?
+        self.claimed_gas_per_block = 5 * 1000_0000  # 0.5 GAS per block
 
     def _check_neo_token_basics(self):
         # Step 1: check the NEO token symbol
@@ -79,7 +79,7 @@ class NativeNep17(BasicsTesting):
         decimals = result['stack'][0]['value']
         assert decimals == '8', f"Expected 8, got {decimals}"
 
-    def _check_gas_per_block(self):
+    def _check_claimed_gas_per_block(self):
         # Step 1: check the GAS token totalSupply
         block_index = self.client.get_block_index()
         result = self.client.invoke_function(GAS_CONTRACT_HASH, 'totalSupply', [])
@@ -95,13 +95,13 @@ class NativeNep17(BasicsTesting):
         self.logger.info(f"GAS token totalSupply in block {block_index}: {result}")
 
         total_supply_next = int(result['stack'][0]['value'])
-        assert total_supply_next == total_supply + self.gas_per_block, \
-            f"Expected {total_supply + self.gas_per_block}, got {total_supply_next}"
+        assert total_supply_next == total_supply + self.claimed_gas_per_block, \
+            f"Expected {total_supply + self.claimed_gas_per_block}, got {total_supply_next}"
 
     def run_test(self):
         self._check_neo_token_basics()
         self._check_gas_token_basics()
-        self._check_gas_per_block()
+        self._check_claimed_gas_per_block()
 
 
 # Run with: python3 -B -m testcases.basics.native_nep17
