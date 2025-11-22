@@ -9,6 +9,7 @@
 # Redistribution and use in source and binary forms with or without
 # modifications are permitted.
 
+from neo import NamedCurveHash
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -16,16 +17,9 @@ import ecdsa
 import sha3
 
 
-class NamedCurveHash:
-    SECP256K1_SHA256 = 22
-    SECP256R1_SHA256 = 23
-    SECP256K1_KECCAK256 = 122
-    SECP256R1_KECCAK256 = 123
-
-
 # Operation: this case tests the native contract CryptoLib.verifyWithECDsa function.
 # 1. verifyWithECDsa has 4 parameters: message, publicKey, signature, namedCurveHash
-# 2. The public key is a compressed or not compressed SECP256K1 or SECP256R1 ECPoint exception 
+# 2. The public key is a compressed or not compressed SECP256K1 or SECP256R1 ECPoint exception
 #  if the public key is invalid(FormatException), empty(ArrayOutOfBounds) or null(ArrayOutOfBounds)
 # 3. The signature is a 64 bytes signature, false if the signature is invalid
 # Expect Result: The native contract CryptoLib.verifyWithECDsa function is working as expected.
@@ -82,7 +76,9 @@ class VerifyWithEcdsa(Testing):
 
         # Step 4: verify with invalid signature.
         self.logger.info("Test verifyWithECDsa with invalid signature")
-        public_key = self.env.validators[0].public_key.encode_point(True)
+
+        private_key = ecdsa.SigningKey.generate(curve=ecdsa.NIST256p)
+        public_key = private_key.get_verifying_key().to_string('compressed')
         self._check_verify_with_ecdsa([b"hello world", public_key, b'2' * 63, NamedCurveHash.SECP256R1_SHA256],
                                       result=False)
 
@@ -93,7 +89,8 @@ class VerifyWithEcdsa(Testing):
 
         # Step 6: verify public key with wrong named curve hash.
         self.logger.info("Test verifyWithECDsa with public key with wrong named curve hash")
-        self._check_verify_with_ecdsa([b"hello world", public_key, b'2' * 64, NamedCurveHash.SECP256K1_SHA256],
+        secp256r1_pubkey = bytes.fromhex('0285265dc8859d05e1e42a90d6c29a9de15531eac182489743e6a947817d2a9f66')
+        self._check_verify_with_ecdsa([b"hello world", secp256r1_pubkey, b'2' * 64, NamedCurveHash.SECP256K1_SHA256],
                                       exception='The point compression is invalid')  # mismatch named curve hash.p
 
         # Step 7: verify with invalid named curve hash.

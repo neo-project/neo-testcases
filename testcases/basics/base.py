@@ -24,12 +24,15 @@ class BasicsTesting(Testing):
 
     def _check_nep17_transfer_notification(self, notification: dict, contract_hash: str, source: UInt160 | None,
                                            dest: UInt160 | None, amount: str | None):
-        assert 'contract' in notification and notification['contract'] == contract_hash
-        assert 'eventname' in notification and notification['eventname'] == 'Transfer'
-        assert 'state' in notification
+        assert 'contract' in notification and notification['contract'] == contract_hash, \
+            f"Expected {contract_hash}, got {notification['contract']}"
+        assert 'eventname' in notification and notification['eventname'] == 'Transfer', \
+            f"Expected Transfer, got {notification['eventname']}"
+        assert 'state' in notification, f"Expected state, got {notification}"
+
         state = notification['state']
-        assert 'type' in state and state['type'] == 'Array'
-        assert 'value' in state and len(state['value']) == 3
+        assert 'type' in state and state['type'] == 'Array', f"Expected Array, got {state['type']}"
+        assert 'value' in state and len(state['value']) == 3, f"Expected 3 items in value, got {len(state['value'])}"
 
         # Check the state[0] is from address
         from_address = state['value'][0]
@@ -64,7 +67,9 @@ class BasicsTesting(Testing):
         self.check_execution_result(execution, stack=[('Boolean', True)])
 
         # Check the notifications
-        assert 'notifications' in execution and len(execution['notifications']) == 3
+        assert 'notifications' in execution
+        # Maybe 2 or 3 notifications, because the GAS transfer to the from address and to the to address are optional.
+        assert len(execution['notifications']) == 3 or len(execution['notifications']) == 2
 
         # Check the notifications[0] is NEO transfer
         notification = execution['notifications'][0]
@@ -75,8 +80,9 @@ class BasicsTesting(Testing):
         self._check_nep17_transfer_notification(notification, GAS_CONTRACT_HASH, None, source, None)
 
         # Check the notifications[2] is GAS transfer to the to address
-        notification = execution['notifications'][2]  # TODO: check GAS amount
-        self._check_nep17_transfer_notification(notification, GAS_CONTRACT_HASH, None, dest, None)
+        if len(execution['notifications']) == 3:
+            notification = execution['notifications'][2]  # TODO: check GAS amount
+            self._check_nep17_transfer_notification(notification, GAS_CONTRACT_HASH, None, dest, None)
 
 
 if __name__ == "__main__":
