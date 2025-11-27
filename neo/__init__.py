@@ -30,3 +30,9 @@ class Hardforks:
     HF_Echidna = "HF_Echidna"
     HF_Faun = "HF_Faun"
     HHF_Gorgon = "HF_Gorgon"
+
+class NamedCurveHash:
+    SECP256K1_SHA256 = 22
+    SECP256R1_SHA256 = 23
+    SECP256K1_KECCAK256 = 122
+    SECP256R1_KECCAK256 = 123
