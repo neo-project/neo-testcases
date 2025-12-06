@@ -6,7 +6,10 @@ groups=(
     "basics"
     "crypto"
     "fee"
+    "governance"
     "policy"
+    "stdlib"
+    "plugins/rpcserver"
 )
 
 selected_groups=${groups[@]}
@@ -55,7 +58,8 @@ for group in ${selected_groups[@]}; do
         basename=$(basename $file .py) # remove the .py extension
         echo "$(date) - Run $basename test..."
 
-        python3 -B -m testcases.$group.$basename
+        module=$(echo $group | sed 's/\//./g') # replace '/' with '.' in the group name
+        python3 -B -m testcases.$module.$basename
         if [ $? -ne 0 ]; then
             echo "$(date) - Failed to run $basename test"
             failures+=("$group/$basename")

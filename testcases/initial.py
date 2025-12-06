@@ -23,13 +23,15 @@ class TestingInitial(Testing):
         super().__init__(__class__.__name__)
 
     def run_test(self):
-        # Step 1: initialize the NEO and GAS balance of the others[0] account
+        # Step 1: initialize the NEO balance of the others
         neo_initial = NeoRpcTransferMultiSign()
         neo_initial.run()
 
+        # Step 2: initialize the GAS balance of the others
         gas_initial = GasRpcTransferMultiSign()
         gas_initial.run()
 
+        # Step 3: initialize the GAS balance from bft-address to committee-address
         self._initialize_gas_for_committee()
 
     def _initialize_gas_for_committee(self):

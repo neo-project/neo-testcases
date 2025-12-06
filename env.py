@@ -45,10 +45,12 @@ class Env:
     # The hardforks, the default value from localnet testing network
     hardforks: Hardfork = field(default_factory=Hardfork)
 
-    # The accounts of the validators
+    # The accounts of the validators. Add hex-encoded private key to the testbed to declare a validator.
+    # The validators should be 7 accounts.
     validators: list[Account] = field(default_factory=list)
 
-    # Other accounts for testing
+    # Other accounts for testing. Add hex-encoded private key to the testbed json file to add a new account.
+    # The others should be at least 3 accounts.
     others: list[Account] = field(default_factory=list)
 
     # Whether to enable neo4 features
