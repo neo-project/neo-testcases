@@ -6,7 +6,10 @@ $groups = @(
     "basics"
     "crypto"
     "fee"
+    "governance"
     "policy"
+    "stdlib"
+    "plugins/rpcserver"
 )
 
 $selected_groups = $groups
@@ -62,7 +65,8 @@ foreach ($group in $selected_groups) {
         Write-Host "$(Get-Date) - Run $basename test..."
 
         try {
-            python3 -B -m "testcases.$group.$basename"
+            $module = $group.Replace('/', '.')
+            python3 -B -m "testcases.$module.$basename"
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "$(Get-Date) - Failed to run $basename test"
                 $failures += "$group/$basename"

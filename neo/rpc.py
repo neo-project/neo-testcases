@@ -27,7 +27,7 @@ class RpcClient:
         self._endpoint = endpoint
         self._id = 0
 
-    def _send(self, method: str, params: list):
+    def send(self, method: str, params: list):
         self._id += 1
         req = {
             "jsonrpc": "2.0",
@@ -46,26 +46,26 @@ class RpcClient:
         return rsp['result'] if 'result' in rsp else None
 
     def get_block(self, block_hash_or_index: str | int, verbose: bool = False) -> dict:
-        return self._send("getblock", [block_hash_or_index, verbose])
+        return self.send("getblock", [block_hash_or_index, verbose])
 
     def get_block_count(self) -> int:
-        return self._send("getblockcount", [])
+        return self.send("getblockcount", [])
 
     def get_block_index(self) -> int:
-        return self._send("getblockcount", []) - 1
+        return self.send("getblockcount", []) - 1
 
     def get_block_hash(self, index: int) -> str:
-        return self._send("getblockhash", [index])
+        return self.send("getblockhash", [index])
 
     def get_block_header(self, block_hash_or_index: str | int, verbose: bool = False) -> dict:
-        return self._send("getblockheader", [block_hash_or_index, verbose])
+        return self.send("getblockheader", [block_hash_or_index, verbose])
 
     def get_committee(self) -> list:
-        return self._send("getcommittee", [])
+        return self.send("getcommittee", [])
 
     def get_wallet_balance(self, address: str | UInt160) -> dict:
         address = str(address) if isinstance(address, UInt160) else address
-        return self._send("getwalletbalance", [address])
+        return self.send("getwalletbalance", [address])
 
     def get_neo_balance(self, account: str | UInt160) -> int:
         account = str(account) if isinstance(account, UInt160) else account
@@ -82,20 +82,20 @@ class RpcClient:
     def invoke_function(
             self, script_hash: str | UInt160, method: str, args: list[ContractParameter | dict] = []) -> any:
         script_hash = str(script_hash) if isinstance(script_hash, UInt160) else script_hash
-        return self._send("invokefunction",
+        return self.send("invokefunction",
                           [script_hash, method, [x if isinstance(x, dict) else x.to_dict() for x in args]])
 
     def send_raw_tx(self, raw_tx: bytes):
-        return self._send("sendrawtransaction", [base64.b64encode(raw_tx).decode('utf-8')])
+        return self.send("sendrawtransaction", [base64.b64encode(raw_tx).decode('utf-8')])
 
     def get_mempool(self, include_unverified: bool = False) -> dict:
-        return self._send("getrawmempool", [include_unverified])
+        return self.send("getrawmempool", [include_unverified])
 
     def calculate_network_fee(self, raw_tx: bytes) -> dict:
-        return self._send("calculatenetworkfee", [base64.b64encode(raw_tx).decode('utf-8')])
+        return self.send("calculatenetworkfee", [base64.b64encode(raw_tx).decode('utf-8')])
 
     def get_application_log(self, tx_hash: str, trigger_type: str = "") -> dict:
         """
         From Plugin ApplicationLogs.
         """
-        return self._send("getapplicationlog", [tx_hash, trigger_type])
+        return self.send("getapplicationlog", [tx_hash, trigger_type])

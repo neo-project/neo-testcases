@@ -9,12 +9,12 @@
 # Redistribution and use in source and binary forms with or without
 # modifications are permitted.
 
-from neo import CallFlags
+from neo import CallFlags, UInt160
 from neo.contract import GAS_CONTRACT_HASH, ScriptBuilder
 from testcases.basics.base import BasicsTesting
 
 
-# Operation: this case creates a valid transaction, transfer 10000 GAS from the BFT account to the others[0] and committee address.
+# Operation: this case creates a valid transaction, transfer 10_0000 GAS from the BFT account to the others[0]
 # and then check the GAS balance and the transaction execution result.
 # Expect Result: The transaction execution is OK, and the GAS balance is as expected.
 class GasRpcTransferMultiSign(BasicsTesting):
@@ -22,16 +22,14 @@ class GasRpcTransferMultiSign(BasicsTesting):
     def __init__(self):
         super().__init__("GasRpcTransferMultiSign")
 
-    def run_test(self):
+    def _transfer_gas(self, dest160: UInt160, amount: int):
         # Step 1: Build the transfer script
         source160 = self.bft_address()
-        dest160 = self.env.others[0].script_hash
-        amount = 10000_00000000  # 10000 GAS
         script = ScriptBuilder().emit_dynamic_call(
             script_hash=GAS_CONTRACT_HASH,
             method='transfer',
             call_flags=(CallFlags.STATES | CallFlags.ALLOW_CALL | CallFlags.ALLOW_NOTIFY),
-            args=[source160, dest160, amount, None],  # transfer(from, to, 10000 GAS, None)
+            args=[source160, dest160, amount, None],  # transfer(from, to, 10_0000 GAS, None)
         ).to_bytes()
 
         # Step 2: get source and destination GAS balance
@@ -82,6 +80,11 @@ class GasRpcTransferMultiSign(BasicsTesting):
         assert 'notifications' in execution and len(execution['notifications']) == 1
         notification = execution['notifications'][0]
         self._check_nep17_transfer_notification(notification, GAS_CONTRACT_HASH, source160, dest160, amount)
+
+    def run_test(self):
+        self._transfer_gas(self.env.others[0].script_hash, 10_0000_00000000)
+        self._transfer_gas(self.env.others[1].script_hash, 10_0000_00000000)
+        self._transfer_gas(self.env.others[2].script_hash, 10_0000_00000000)
 
 
 # Run with: python3 -B -m testcases.basics.gas_rpc_transfer_multisig
