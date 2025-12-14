@@ -159,6 +159,8 @@ class MaxValidUntilBlockIncrement(Testing):
             execution, exception=f'MaxValidUntilBlockIncrement must be between [{self.min_max_valid_until_block_increment}, {self.max_max_valid_until_block_increment}]')
 
     def run_test(self):
+        if self.env.neo4_enable:
+            return # Removed in neo4
         self._get_original_max_valid_until_block_increment()
         self._check_invoke_function_update_max_valid_until_block_increment()
         self._check_no_permission_update_max_valid_until_block_increment()

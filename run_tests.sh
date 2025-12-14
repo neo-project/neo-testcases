@@ -7,6 +7,7 @@ groups=(
     "crypto"
     "fee"
     "governance"
+    "ledger"
     "policy"
     "stdlib"
     "plugins/rpcserver"

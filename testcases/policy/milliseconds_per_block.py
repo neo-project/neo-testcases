@@ -160,6 +160,8 @@ class MillisecondsPerBlock(Testing):
             execution, exception=f'MillisecondsPerBlock must be between [{self.min_millis_per_block}, {self.max_millis_per_block}]')
 
     def run_test(self):
+        if self.env.neo4_enable:
+            return  # Removed in neo4
         self._get_original_millis_per_block()
         self._check_invoke_function_update_millis_per_block()
         self._check_no_permission_update_millis_per_block()

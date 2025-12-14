@@ -18,6 +18,11 @@ from testcases.testing import Testing
 
 
 # Operation: this case registers candidates(self.env.others[0,1]).
+# Method: RegisterCandidate(byte[] publicKey) -> bool
+#  1. The publickey cannot be null.
+#  2. The system fee must greater than the register price + original system fee.
+#  3. Only can register self.
+#  4. The vote is zero after initial registration.
 # Expect Result: The candidate is registered successfully.
 class CandidateRegister(Testing):
 
