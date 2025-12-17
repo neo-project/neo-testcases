@@ -16,8 +16,8 @@ from testcases.testing import Testing
 # Operation: this case tests the getTxHeight method in Ledger contract.
 # Method: GetTransactionHeight(UInt256 txHash) -> int
 #  1. The txHash cannot be null.
-#  2. If the txHash is not found, it will return -1.
-#  3. If the txHash is found, it will return the transaction height.
+#  2. If the txHash is not found or (current-height - the block height of the tx) > max-traceable-blocks, it will return -1.
+#  3. If the txHash is found, it will return the block height of the tx.
 # Expect Result: The getTxHeight method is working as expected.
 class GetTxHeight(Testing):
     def __init__(self):
