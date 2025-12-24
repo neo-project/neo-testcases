@@ -18,10 +18,10 @@ from testcases.testing import Testing
 # Method:GetTransactionFromBlock(byte[] blockIndexOrHash, int txIndex) -> Transaction or null
 #  1. The blockIndexOrHash cannot be null.
 #  2. The txIndex must between [0, block.transactions.length).
-#  3. If current-block-index - block-index < max-traceable-blocks, it will return null.
+#  3. If current-height - block-height < max-traceable-blocks, it will return null.
 #  4. If the block is not found, it will return null.
-#  5. if the blockIndexOrHash.length is 32, it will be treated as a block hash.
-#  6. if the blockIndexOrHash.length less than 32, it will be treated as a block index and must be in [0, uint32.MaxValue].
+#  5. If the blockIndexOrHash.length is 32, it will be treated as a block hash.
+#  6. If the blockIndexOrHash.length less than 32, it will be treated as a block index and must be in [0, uint32.MaxValue].
 #  7. If the blockIndexOrHash.length greater than 32, it will fail.
 # Expect Result: The getTransactionFromBlock method is working as expected.
 class TxFromBlock(Testing):

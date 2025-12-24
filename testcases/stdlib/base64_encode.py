@@ -9,21 +9,44 @@
 # modifications are permitted.
 
 
+from neo.contract import STDLIB_CONTRACT_HASH
 from testcases.stdlib.base import StdLibTesting
 
 
+# Operation: this case tests the base64Encode method in StdLib contract.
+# Method: Base64Encode(byte[] data) -> string
+#  1. The data cannot be null, if the data is null, it will fail.
+#  2. If the data is not null, it will return the base64 encoded string.
+# Method: Base64Decode(string data) -> byte[]
+#  1. The data cannot be null, if the data is null, it will fail.
+#  2. If the data is not a valid base64 encoded string, it will fail.
+#  3. If the data is not null and valid base64 encoded string, it will return the base64 decoded bytes.
+# Expect Result: The base64Encode method is working as expected.
 class Base64Encode(StdLibTesting):
 
     def __init__(self):
         super().__init__("Base64Encode")
 
-    def run_test(self):
-        # Step 1: check call with null
+    def _check_argument_null(self):
+        # Step 1: check base64Encode with null
         exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
         self.check_call_with_null("base64Encode", [], exception)
 
         # Step 2: check base64Decode with null
         self.check_call_with_null("base64Decode", [], exception)
+
+    def _check_invalid_base64(self):
+        encoded = "????"
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base64Decode",
+                                             [{'type': 'String', 'value': encoded}])
+        self.logger.info(f"Invoke 'base64Decode' with invalid base64 encoded string result: {result}")
+        assert 'exception' in result and 'The input is not a valid Base-64 string' in result['exception']
+
+    def run_test(self):
+        self._check_argument_null()
+        self._check_invalid_base64()
+
+        # TODO: check normal cases
 
 
 # Run with: python3 -B -m testcases.stdlib.base64_encode
