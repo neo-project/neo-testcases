@@ -9,6 +9,9 @@
 # modifications are permitted.
 
 
+import base64
+import base58
+
 from neo.contract import STDLIB_CONTRACT_HASH
 from testcases.stdlib.base import StdLibTesting
 
@@ -30,10 +33,10 @@ class Base58Encode(StdLibTesting):
     def _check_argument_null(self):
         # Step 1: check base58Encode with null
         exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
-        self.check_call_with_null("base58Encode", [], exception)
+        self.check_call_with_null("base58Encode", stack=[], exception=exception)
 
         # Step 2: check base58Decode with null
-        self.check_call_with_null("base58Decode", [], exception)
+        self.check_call_with_null("base58Decode", stack=[], exception=exception)
 
     def _check_invalid_base58(self):
         encoded = "0000"
@@ -42,11 +45,30 @@ class Base58Encode(StdLibTesting):
         self.logger.info(f"Invoke 'base58Decode' with invalid base58 encoded string result: {result}")
         assert 'exception' in result and 'nvalid Base58' in result['exception']
 
+    def _check_normal_cases(self):
+        # Step 3: check base58Encode with normal data
+        source = base64.b64encode(b'0123456789abcdef').decode('utf-8')
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base58Encode",
+                                             [{'type': 'ByteArray', 'value': source}])
+        self.logger.info(f"Invoke 'base58Encode' with normal data result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+
+        expected = base64.b64encode(base58.b58encode(b'0123456789abcdef')).decode('utf-8')
+        assert result['stack'][0]['type'] == 'ByteString'
+        assert result['stack'][0]['value'] == expected, f"Expected {expected}, got {result['stack'][0]['value']}"
+
     def run_test(self):
+        # Step 1: check base58Encode with null
         self._check_argument_null()
+
+        # Step 2: check base58Decode with invalid base58 encoded string
         self._check_invalid_base58()
 
-        # TODO: check normal cases
+        # Step 3: Check length limit
+        self.check_size_limit("base58Encode", pramater_type='ByteArray')
+
+        # Step 4: Check normal cases
+        self._check_normal_cases()
 
 
 # Run with: python3 -B -m testcases.stdlib.base58_encode

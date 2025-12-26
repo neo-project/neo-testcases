@@ -8,6 +8,7 @@
 # Redistribution and use in source and binary forms with or without
 # modifications are permitted.
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -25,6 +26,8 @@ class MaxValidUntilBlockIncrement(Testing):
         self.updated_max_valid_until_block_increment = 5000
         self.min_max_valid_until_block_increment = 1
         self.max_max_valid_until_block_increment = 86400
+        self.neo3_only = True
+        self.hardfork = Hardforks.HF_Echidna
 
     def _make_update_max_valid_until_block_increment_tx(self, max_valid_until_block_increment: int):
         block_index = self.client.get_block_index()
@@ -159,8 +162,6 @@ class MaxValidUntilBlockIncrement(Testing):
             execution, exception=f'MaxValidUntilBlockIncrement must be between [{self.min_max_valid_until_block_increment}, {self.max_max_valid_until_block_increment}]')
 
     def run_test(self):
-        if self.env.neo4_enable:
-            return # Removed in neo4
         self._get_original_max_valid_until_block_increment()
         self._check_invoke_function_update_max_valid_until_block_increment()
         self._check_no_permission_update_max_valid_until_block_increment()

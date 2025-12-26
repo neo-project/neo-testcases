@@ -9,6 +9,7 @@
 # Redistribution and use in source and binary forms with or without
 # modifications are permitted.
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -24,6 +25,7 @@ import ecdsa
 class VerifyWithEd25519(Testing):
     def __init__(self):
         super().__init__("VerifyWithEd25519")
+        self.hardfork = Hardforks.HF_Echidna
 
     def _check_verify_with_ed25519(self, args: list[any], result: bool = True, exception: None | str = None):
         block_index = self.client.get_block_index()

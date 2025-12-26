@@ -32,13 +32,14 @@ class BinarySerialize(StdLibTesting):
     def _check_argument_null(self):
         # Step 1: check serialize with null
         self.logger.info(f"serialize null value: {base64.b64decode(b'AA==').hex()}")  # 00
-        self.check_call_with_null("serialize", [('ByteString', 'AA==')], exception=None)
+        self.check_call_with_null("serialize", stack=[('ByteString', 'AA==')], exception=None)
 
         # Step 2: check deserialize with null
         message = 'Position 0 + Wanted 1 is exceeded boundary(0)'
-        self.check_call_with_null("deserialize", [], exception=message)
+        self.check_call_with_null("deserialize", stack=[], exception=message)
 
     def run_test(self):
+        # Step 1: Check argument with null
         self._check_argument_null()
 
         # TODO: check normal cases

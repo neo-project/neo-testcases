@@ -18,13 +18,19 @@ class JsonSerialize(StdLibTesting):
     def __init__(self):
         super().__init__("JsonSerialize")
 
-    def run_test(self):
-        # Step 1: check JsonSerialize with null
+    def _check_argument_null(self):
+        # Step 1: check jsonSerialize with 'null' string
         value = base64.b64encode(b'null').decode('utf-8')
-        self.check_call_with_null("jsonSerialize", [('ByteString', value)], exception=None)
+        self.check_call_with_null("jsonSerialize", stack=[('ByteString', value)], exception=None)
 
-        # Step 2: check jsonDeserialize with null
-        self.check_call_with_null("jsonDeserialize", [], exception='The input does not contain any JSON tokens')
+        # Step 2: check jsonDeserialize with null value
+        self.check_call_with_null("jsonDeserialize", stack=[], exception='The input does not contain any JSON tokens')
+
+    def run_test(self):
+        # Step 1: Check jsonSerialize and jsonDeserialize with null
+        self._check_argument_null()
+
+        # TODO: check normal cases
 
 
 # Run with: python3 -B -m testcases.stdlib.json_serialize
