@@ -9,6 +9,8 @@
 # modifications are permitted.
 
 
+import base64
+
 from neo.contract import STDLIB_CONTRACT_HASH
 from testcases.stdlib.base import StdLibTesting
 
@@ -30,10 +32,10 @@ class Base58CheckEncode(StdLibTesting):
     def _check_argument_null(self):
         # Step 1: check base58CheckEncode with null
         exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
-        self.check_call_with_null("base58CheckEncode", [], exception)
+        self.check_call_with_null("base58CheckEncode", stack=[], exception=exception)
 
         # Step 2: check base58CheckDecode with null
-        self.check_call_with_null("base58CheckDecode", [], exception)
+        self.check_call_with_null("base58CheckDecode", stack=[], exception=exception)
 
     def _check_invalid_base58check(self):
         encoded = "0000"
@@ -43,8 +45,14 @@ class Base58CheckEncode(StdLibTesting):
         assert 'exception' in result and 'Invalid Base58' in result['exception']
 
     def run_test(self):
+        # Step 1: Check base58CheckEncode and base58CheckDecode with null
         self._check_argument_null()
+
+        # Step 2: Check base58CheckDecode with invalid base58Check encoded string
         self._check_invalid_base58check()
+
+        # Step 3: Check length limit
+        self.check_size_limit("base58Encode", pramater_type='ByteArray')
 
         # TODO: check normal cases
 

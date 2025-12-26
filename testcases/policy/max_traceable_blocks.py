@@ -8,6 +8,7 @@
 # Redistribution and use in source and binary forms with or without
 # modifications are permitted.
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -27,6 +28,8 @@ class MaxTraceableBlocks(Testing):
         self.updated_max_traceable_blocks = 2102400 - 1
         self.min_max_traceable_blocks = 1
         self.max_max_traceable_blocks = 2102400
+        self.neo3_only = True
+        self.hardfork = Hardforks.HF_Echidna
 
     def _make_update_max_traceable_blocks_tx(self, max_traceable_blocks: int):
         block_index = self.client.get_block_index()
@@ -216,8 +219,6 @@ class MaxTraceableBlocks(Testing):
         self.check_stack(result['stack'], [('Integer', str(max_traceable_blocks))])
 
     def run_test(self):
-        if self.env.neo4_enable:
-            return  # Removed in neo4
         self._get_original_max_traceable_blocks()
         self._check_invoke_function_update_max_traceable_blocks()
         self._check_no_permission_update_max_traceable_blocks()

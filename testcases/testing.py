@@ -37,6 +37,9 @@ class Testing:
         self.logger = logging.getLogger(loggerName)
         self.default_sysfee = 1_0000000  # 0.1 GAS
         self.default_netfee = 1_0000000  # 0.1 GAS
+        self.neo4_only = False
+        self.neo3_only = False
+        self.hardfork = None
 
     def wait_next_block(self, current_block_index: int, wait_while: str = '', max_wait_seconds: int = 5*60) -> int:
         start_time = time.time()
@@ -156,9 +159,20 @@ class Testing:
                 assert 'value' not in got or got['value'] is None, f"Expected None, got {got['value']} at {i}"
 
     def run(self):
-        # Step 0: wait for creating block 1.
-        block_index = self.wait_next_block(1)
+        if self.env.neo4_enable and self.neo3_only:
+            self.logger.info("Skipping test for neo4 only")
+            return
+
+        if not self.env.neo4_enable and self.neo4_only:
+            self.logger.info("Skipping test for neo3 only")
+            return
+
+        block_index = self.wait_next_block(1)  # Step 0: wait for creating block 1.
         self.logger.info(f"Current block index: {block_index}")
+
+        if self.hardfork is not None and not self.env.is_hardfork_enabled(self.hardfork, block_index):
+            self.logger.info(f"Skipping test for hardfork {self.hardfork} at index {block_index} not enabled")
+            return
 
         self.pre_test()
         try:
