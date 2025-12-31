@@ -9,6 +9,9 @@
 # modifications are permitted.
 
 
+import base64
+from typing import Union
+
 from neo.contract import STDLIB_CONTRACT_HASH, CallFlags, ScriptBuilder
 from testcases.testing import Testing
 
@@ -17,10 +20,14 @@ class StdLibTesting(Testing):
 
     def __init__(self, loggerName: str = "StdLibTesting"):
         super().__init__(loggerName)
+        self.max_size_limit = 1024
 
-    def check_call_with_null(self, method: str, stack: list[tuple[str, str]] = [], exception: str | None = None):
+    def check_call_with_null(self, method: str,
+                             pramater_type: str = 'ByteArray',
+                             stack: list[tuple[str, str]] = [],
+                             exception: str | None = None):
         # Step 1: check invoke with null
-        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, method, [{'type': 'ByteArray'}])
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, method, [{'type': pramater_type}])
         self.logger.info(f"Invoke '{method}' with null result: {result}")
 
         if exception is not None:
@@ -52,3 +59,19 @@ class StdLibTesting(Testing):
             assert execution['vmstate'] == 'HALT'
             assert 'exception' not in execution or execution['exception'] is None
             self.check_stack(execution['stack'], stack)
+
+    def check_size_limit(self, method: str, pramater_type: str = 'ByteArray',
+                         arg_2nd: Union[dict[str, str], None] = None):
+        if pramater_type == 'ByteArray':
+            source = base64.b64encode(b'0' * (self.max_size_limit + 1)).decode('utf-8')
+        elif pramater_type == 'String':
+            source = '0' * (self.max_size_limit + 1)
+        else:
+            raise ValueError(f"Invalid parameter type: {pramater_type}")
+
+        args = [{'type': pramater_type, 'value': source}]
+        if arg_2nd is not None:
+            args.append(arg_2nd)
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, method, args)
+        self.logger.info(f"Invoke '{method}' with size limit result: {result}")
+        assert 'exception' in result and 'The input exceeds the maximum length' in result['exception']

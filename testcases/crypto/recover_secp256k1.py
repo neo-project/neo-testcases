@@ -13,6 +13,7 @@ import base64
 import ecdsa
 import hashlib
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -24,6 +25,7 @@ class RecoverSecp256k1(Testing):
         super().__init__("RecoverSecp256k1")
         self.secp256k1_private_key = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)
         self.SECP256K1_SHA256 = 22
+        self.hardfork = Hardforks.HF_Echidna
 
     def _check_recover_secp256k1_failed_result(self, result: dict):
         assert 'exception' not in result or result['exception'] is None

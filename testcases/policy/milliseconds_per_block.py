@@ -8,6 +8,7 @@
 # Redistribution and use in source and binary forms with or without
 # modifications are permitted.
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -26,6 +27,8 @@ class MillisecondsPerBlock(Testing):
         self.updated_millis_per_block = 10_000
         self.min_millis_per_block = 1
         self.max_millis_per_block = 30_000
+        self.neo3_only = True
+        self.hardfork = Hardforks.HF_Echidna
 
     def _make_update_millis_per_block_tx(self, millis_per_block: int):
         block_index = self.client.get_block_index()
@@ -160,8 +163,6 @@ class MillisecondsPerBlock(Testing):
             execution, exception=f'MillisecondsPerBlock must be between [{self.min_millis_per_block}, {self.max_millis_per_block}]')
 
     def run_test(self):
-        if self.env.neo4_enable:
-            return  # Removed in neo4
         self._get_original_millis_per_block()
         self._check_invoke_function_update_millis_per_block()
         self._check_no_permission_update_millis_per_block()

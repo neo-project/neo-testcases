@@ -11,6 +11,7 @@
 
 import base64
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -21,6 +22,7 @@ class Keccak256Testing(Testing):
 
     def __init__(self):
         super().__init__("Keccak256Testing")
+        self.hardfork = Hardforks.HF_Cockatrice
 
     def _check_keccak256_result_stack(self, stack: list, expected_hash: str):
         assert len(stack) == 1, f"Expected 1 item in stack, got {len(stack)}"

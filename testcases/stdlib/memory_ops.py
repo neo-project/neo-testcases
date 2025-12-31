@@ -19,7 +19,7 @@ class MemoryOps(StdLibTesting):
     def __init__(self):
         super().__init__("MemoryOps")
 
-    def _check_memory_compare(self):
+    def _check_memory_compare_with_null(self):
         # Step 1: check MemoryCompare(value1, value2) with null value1
         message = 'Specified cast is not valid'
         value2 = base64.b64encode(b'hello').decode('utf-8')
@@ -35,7 +35,7 @@ class MemoryOps(StdLibTesting):
         self.logger.info(f"Invoke 'memoryCompare' with null value2 result: {result}")
         assert 'exception' in result and message in result['exception']
 
-    def _check_memory_search(self):
+    def _check_memory_search_with_null(self):
         # Step 1: check MemorySearch(value, pattern) with null value
         message = 'Specified cast is not valid'
         pattern = base64.b64encode(b'hello').decode('utf-8')
@@ -51,9 +51,45 @@ class MemoryOps(StdLibTesting):
         self.logger.info(f"Invoke 'memorySearch' with null pattern result: {result}")
         assert 'exception' in result and 'Value cannot be null' in result['exception']
 
+    def _check_memory_compare_size_limit(self):
+        data = base64.b64encode(b'01234').decode('utf-8')
+        # Step 1: check MemoryCompare(value1, value2) with size limit
+        self.check_size_limit('memoryCompare', pramater_type='ByteArray', arg_2nd={'type': 'ByteArray', 'value': data})
+
+        # Step 2: check MemoryCompare(value1, value2) with size limit
+        invalid = base64.b64encode(b'0' * (self.max_size_limit + 1)).decode('utf-8')
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, 'memoryCompare',
+                                             [{'type': 'ByteArray', 'value': data},
+                                              {'type': 'ByteArray', 'value': invalid}])
+        self.logger.info(f"Invoke 'memoryCompare' with size limit result: {result}")
+        assert 'exception' in result and 'The input exceeds the maximum length' in result['exception']
+
+    def _check_memory_search_size_limit(self):
+        data = base64.b64encode(b'01234').decode('utf-8')
+        # Step 1: check MemorySearch(value, pattern) with size limit
+        self.check_size_limit('memorySearch', pramater_type='ByteArray', arg_2nd={'type': 'ByteArray', 'value': data})
+
+        # Step 2: check MemorySearch(value, pattern) with size limit
+        invalid = base64.b64encode(b'0' * (self.max_size_limit + 1)).decode('utf-8')
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, 'memorySearch',
+                                             [{'type': 'ByteArray', 'value': data},
+                                              {'type': 'ByteArray', 'value': invalid}])
+        self.logger.info(f"Invoke 'memorySearch' with size limit result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        assert result['stack'][0]['type'] == 'Integer' and result['stack'][0]['value'] == '-1'
+
     def run_test(self):
-        self._check_memory_compare()
-        self._check_memory_search()
+        # Step 1: Check memory compare with null
+        self._check_memory_compare_with_null()
+
+        # Step 2: Check memory search with null
+        self._check_memory_search_with_null()
+
+        # Step 3: Check 'memoryCompare' size limit
+        self._check_memory_compare_size_limit()
+
+        # Step 4: Check 'memorySearch' size limit
+        self._check_memory_search_size_limit()
 
 
 # Run with: python3 -B -m testcases.stdlib.memory_ops
