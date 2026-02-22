@@ -11,10 +11,12 @@ POLICY_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.POLICY)
 CRYPTO_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.CRYPTO_LIB)
 STDLIB_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.STD_LIB)
 LEDGER_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.LEDGER)
+ROLE_MANAGEMENT_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.ROLE_MANAGEMENT)
+
 
 @dataclass
 class ContractParameter:
-    type: str
+    type: str  # 'Any', 'Boolean', 'ByteArray', 'Integer', 'String', 'Array', 'Map', 'PublicKey', 'Hash160', 'Hash256', 'Signature', 'InteropInterface', 'Void'
     value: any
 
     def to_dict(self):
