@@ -1,6 +1,8 @@
 #!/bin/bash
 # Script to generate and manage multiple localnet neo-cli nodes
 # Usage: ./run-localnet-nodes.sh [start|stop|status|clean] [node_count] [base_port] [base_rpc_port]
+# Environment Variables:
+#   NEO_NODE_DIR    Path to neo-node directory (default: ../../neo-node)
 
 set -e
 
@@ -13,7 +15,12 @@ BASE_DATA_DIR="localnet_nodes"
 DOTNET_VERSION="net10.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NEO_CLI_DIR="${NEO_CLI_DIR:-$SCRIPT_DIR/../../neo/bin/Neo.CLI/$DOTNET_VERSION}"
+
+# Assume the neo-node is in the same directory as the neo-testcases if NEO_NODE_DIR is not set
+NEO_NODE_DIR="${NEO_NODE_DIR:-$SCRIPT_DIR/../../neo-node}"
+
+BUILD_MODE="Debug"
+NEO_CLI_BIN_DIR="$NEO_NODE_DIR/src/Neo.CLI/bin/$BUILD_MODE/$DOTNET_VERSION"
 
 # Colors for output
 RED='\033[0;31m'
@@ -41,11 +48,11 @@ log_error() {
 
 # Check if neo-cli exists
 check_neo_cli() {
-    log_info "Using NEO_CLI_DIR: $NEO_CLI_DIR"
-    if [ ! -f "$NEO_CLI_DIR/neo-cli" ] && [ ! -f "$NEO_CLI_DIR/neo-cli.dll" ]; then
-        log_error "neo-cli not found in $NEO_CLI_DIR"
+    log_info "Using NEO_CLI_BIN_DIR: $NEO_CLI_BIN_DIR"
+    if [ ! -f "$NEO_CLI_BIN_DIR/neo-cli" ] && [ ! -f "$NEO_CLI_BIN_DIR/neo-cli.dll" ]; then
+        log_error "neo-cli not found in $NEO_CLI_BIN_DIR"
         log_info "Please build the project first: dotnet build"
-        log_info "Or set NEO_CLI_DIR environment variable to the correct path"
+        log_info "Or set NEO_NODE_DIR environment variable to the correct path"
         exit 1
     fi
 }
@@ -196,30 +203,36 @@ EOF
     log_success "Generated config for node $node_id"
 }
 
-
+# Initialize required plugins
 initialize_plugins() {
-    for plugin in "DBFTPlugin" "RpcServer" "ApplicationLogs"; do
-        plugin_dir="$NEO_CLI_DIR/../../Neo.Plugins.$plugin/$DOTNET_VERSION"
-        if [ ! -d "$NEO_CLI_DIR/Plugins/$plugin" ]; then
-            mkdir -p "$NEO_CLI_DIR/Plugins/$plugin"
+    for plugin in "LevelDBStore" "DBFTPlugin" "RpcServer" "ApplicationLogs"; do
+        plugin_dir="$NEO_NODE_DIR/plugins/$plugin/bin/$BUILD_MODE/$DOTNET_VERSION"
+        if [ ! -d "$NEO_CLI_BIN_DIR/Plugins/$plugin" ]; then
+            mkdir -p "$NEO_CLI_BIN_DIR/Plugins/$plugin"
         fi
 
         if [ -f "$plugin_dir/$plugin.dll" ]; then
-            cp "$plugin_dir/$plugin.dll" "$NEO_CLI_DIR/Plugins/$plugin/$plugin.dll"
+            cp "$plugin_dir/$plugin.dll" "$NEO_CLI_BIN_DIR/Plugins/$plugin/$plugin.dll"
         fi
 
         if [ -f "$plugin_dir/$plugin.json" ]; then
-            cp "$plugin_dir/$plugin.json" "$NEO_CLI_DIR/Plugins/$plugin/$plugin.json"
+            cp "$plugin_dir/$plugin.json" "$NEO_CLI_BIN_DIR/Plugins/$plugin/$plugin.json"
         fi
     done
+
+    # local lib_path="$NEO_NODE_DIR/plugins/LevelDBStore/bin/$BUILD_MODE/$DOTNET_VERSION/runtimes"
+    # for platform in "linux-x64" "osx-x64" "win-x64" "linux-arm64" "osx-arm64" "win-arm64"; do
+    #     mkdir -p $NEO_CLI_BIN_DIR/runtimes/$platform/
+    #     cp -r "$lib_path/$platform/" "$NEO_CLI_BIN_DIR/runtimes/$platform/"
+    # done
 }
 
 # Update plugin configuration files to use local test network ID
 update_plugin_configs() {
     log_info "Updating plugin configurations for local test network..."
 
-    # Find and update all plugin JSON files in the Plugins directory under NEO_CLI_DIR
-    find "$NEO_CLI_DIR/Plugins" -name "*.json" -type f 2>/dev/null | while read -r plugin_file; do
+    # Find and update all plugin JSON files in the Plugins directory under NEO_CLI_BIN_DIR
+    find "$NEO_CLI_BIN_DIR/Plugins" -name "*.json" -type f 2>/dev/null | while read -r plugin_file; do
         if [ -f "$plugin_file" ]; then
             # Check if the file contains any Network configuration
             if grep -q '"Network":' "$plugin_file"; then
@@ -229,17 +242,15 @@ update_plugin_configs() {
 
                 # Replace any network ID with local test network ID
                 sed -i.bak 's/"Network": [0-9]*/"Network": 1234567890/g' "$plugin_file"
-
-                # Remove backup file
                 rm -f "$plugin_file.bak"
             fi
         fi
     done
 
-    if [ -f "$NEO_CLI_DIR/Plugins/DBFTPlugin/DBFTPlugin.json" ]; then
+    if [ -f "$NEO_CLI_BIN_DIR/Plugins/DBFTPlugin/DBFTPlugin.json" ]; then
         # set AutoStart to true
-        sed -i.bak 's/"AutoStart": false/"AutoStart": true/g' "$NEO_CLI_DIR/Plugins/DBFTPlugin/DBFTPlugin.json"
-        rm -f "$NEO_CLI_DIR/Plugins/DBFTPlugin/DBFTPlugin.json.bak"
+        sed -i.bak 's/"AutoStart": false/"AutoStart": true/g' "$NEO_CLI_BIN_DIR/Plugins/DBFTPlugin/DBFTPlugin.json"
+        rm -f "$NEO_CLI_BIN_DIR/Plugins/DBFTPlugin/DBFTPlugin.json.bak"
     fi
 
     log_success "Plugin configurations updated for local test network"
@@ -273,6 +284,16 @@ generate_configs() {
     log_success "Generated $NODE_COUNT node configurations"
 }
 
+copy_native_libs() {
+    local target_dir=$1
+    local leveldb_lib="$NEO_NODE_DIR/plugins/LevelDBStore/bin/$BUILD_MODE/$DOTNET_VERSION/runtimes"
+    if [[ $(uname -sm) == "Darwin arm64" ]]; then
+        cp "$leveldb_lib/osx-arm64/native/libleveldb.dylib" "$target_dir"
+    elif [[ $(uname -sm) == "Darwin x86_64" ]]; then
+        cp "$leveldb_lib/osx-x64/native/libleveldb.dylib" "$target_dir"
+    fi
+}
+
 # Start a specific node
 start_node() {
     local node_id=$1
@@ -286,22 +307,18 @@ start_node() {
     fi
 
     log_info "Starting node $node_id..."
-    
-    # Ensure data directory exists
-    mkdir -p "$data_dir"
 
-    # Change to the data directory
-    cd "$data_dir"
+    mkdir -p "$data_dir"; cd "$data_dir" # Ensure data directory exists and change to it
+    copy_native_libs "."
 
-    # Start neo-cli in background
-    log_info "Starting $NEO_CLI_DIR/neo-cli in $data_dir"
-    if [ -f "$NEO_CLI_DIR/neo-cli" ]; then
-        nohup "$NEO_CLI_DIR/neo-cli" --background > neo.log 2>&1 &
+    log_info "Starting $NEO_CLI_BIN_DIR/neo-cli in $data_dir"
+    if [ -f "$NEO_CLI_BIN_DIR/neo-cli" ]; then
+        nohup "$NEO_CLI_BIN_DIR/neo-cli" --background > neo.log 2>&1 &
     else
         log_error "neo-cli executable not found"
         return 1
     fi
-    
+
     local pid=$!
     log_info "node $node_id started with pid $pid"
     echo $pid > neo.pid
@@ -315,7 +332,7 @@ start_node() {
         rm -f neo.pid
         return 1
     fi
-    
+
     # Return to original directory
     cd - > /dev/null
 }
@@ -332,10 +349,10 @@ start_nodes() {
     # Start each node
     for i in $(seq 0 $((NODE_COUNT-1))); do
             # set RpcServer Port to BASE_RPC_PORT + node_id
-        if [ -f "$NEO_CLI_DIR/Plugins/RpcServer/RpcServer.json" ]; then
+        if [ -f "$NEO_CLI_BIN_DIR/Plugins/RpcServer/RpcServer.json" ]; then
             local rpc_port=$((BASE_RPC_PORT + i))
-            sed -i.bak "s/\"Port\": [0-9]*/\"Port\": $rpc_port/g" "$NEO_CLI_DIR/Plugins/RpcServer/RpcServer.json"
-            rm -f "$NEO_CLI_DIR/Plugins/RpcServer/RpcServer.json.bak"
+            sed -i.bak "s/\"Port\": [0-9]*/\"Port\": $rpc_port/g" "$NEO_CLI_BIN_DIR/Plugins/RpcServer/RpcServer.json"
+            rm -f "$NEO_CLI_BIN_DIR/Plugins/RpcServer/RpcServer.json.bak"
         fi
 
         start_node $i
@@ -385,7 +402,7 @@ show_status() {
 
     # if RpcServer plugin not installed, don't show RPC port
     show_rpc_port=false
-    if [ ! -f "$NEO_CLI_DIR/Plugins/RpcServer/RpcServer.json" ]; then
+    if [ ! -f "$NEO_CLI_BIN_DIR/Plugins/RpcServer/RpcServer.json" ]; then
         show_rpc_port=false
     else
         show_rpc_port=true
@@ -418,6 +435,7 @@ show_status() {
             fi
         fi
     done
+
     echo "----------------------------------------------"
 }
 
@@ -438,7 +456,7 @@ show_usage() {
     echo "  status    Show status of all nodes"
     echo "  clean     Clean up all node data"
     echo "  restart   Stop and start all nodes"
-    echo "  regenerate Force regenerate all node configurations"
+    echo "  regen     Force regenerate all node configurations"
     echo ""
     echo "Parameters:"
     echo "  node_count    Number of nodes to start (default: 7)"
@@ -446,15 +464,15 @@ show_usage() {
     echo "  base_rpc_port Starting RPC port (default: 10330)"
     echo ""
     echo "Environment Variables:"
-    echo "  NEO_CLI_DIR    Path to neo-cli directory (default: ../bin/Neo.CLI/$DOTNET_VERSION)"
+    echo "  NEO_NODE_DIR    Path to neo-node directory (default: ../../neo-node)"
     echo ""
     echo "Examples:"
     echo "  $0 start                    # Start 7 nodes with default ports"
     echo "  $0 start 7 30000 20000      # Start 7 nodes with P2P ports 30000-30006, RPC ports 20000-20006"
     echo "  $0 status                   # Show status"
     echo "  $0 stop                     # Stop all nodes"
-    echo "  $0 regenerate               # Force regenerate all configurations"
-    echo "  NEO_CLI_DIR=/path/to/neo-cli $0 start  # Use custom neo-cli path"
+    echo "  $0 regen                    # Force regenerate all configurations"
+    echo "  NEO_NODE_DIR=/path/to/neo-node $0 start  # Use custom neo-node path"
     echo ""
 }
 
@@ -477,7 +495,7 @@ case "${1:-start}" in
         sleep 2
         start_nodes
         ;;
-    "regenerate")
+    "regen")
         log_info "Force regenerating all node configurations..."
         check_neo_cli
         generate_configs true

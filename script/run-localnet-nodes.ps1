@@ -1,5 +1,7 @@
 # Script to generate and manage multiple localnet neo-cli nodes
 # Usage: .\run-localnet-nodes.ps1 [start|stop|status|clean] [node_count] [base_port] [base_rpc_port]
+# Environment Variables:
+#   NEO_NODE_DIR    Path to neo-node directory (default: ../../neo-node)
 
 $ErrorActionPreference = "Stop"
 
@@ -12,7 +14,10 @@ $BASE_DATA_DIR = "localnet_nodes"
 $DOTNET_VERSION = "net10.0"
 
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
-$NEO_CLI_DIR = if ($env:NEO_CLI_DIR) { $env:NEO_CLI_DIR } else { Join-Path $SCRIPT_DIR "..\..\neo\bin\Neo.CLI\$DOTNET_VERSION" }
+$NEO_NODE_DIR = if ($env:NEO_NODE_DIR) { $env:NEO_NODE_DIR } else { Join-Path $SCRIPT_DIR "..\..\neo-node" }
+
+$BUILD_MODE = "Debug"
+$NEO_CLI_BIN_DIR = Join-Path $NEO_NODE_DIR "src\Neo.CLI\bin\$BUILD_MODE\$DOTNET_VERSION"
 
 # Logging functions
 function log_info {
@@ -37,14 +42,14 @@ function log_error {
 
 # Check if neo-cli exists
 function check_neo_cli {
-    log_info "Using NEO_CLI_DIR: $NEO_CLI_DIR"
-    $neoCliExe = Join-Path $NEO_CLI_DIR "neo-cli"
-    $neoCliDll = Join-Path $NEO_CLI_DIR "neo-cli.dll"
+    log_info "Using NEO_CLI_BIN_DIR: $NEO_CLI_BIN_DIR"
+    $neoCliExe = Join-Path $NEO_CLI_BIN_DIR "neo-cli"
+    $neoCliDll = Join-Path $NEO_CLI_BIN_DIR "neo-cli.dll"
     
     if (-not (Test-Path $neoCliExe) -and -not (Test-Path $neoCliDll)) {
-        log_error "neo-cli not found in $NEO_CLI_DIR"
+        log_error "neo-cli not found in $NEO_CLI_BIN_DIR"
         log_info "Please build the project first: dotnet build"
-        log_info "Or set NEO_CLI_DIR environment variable to the correct path"
+        log_info "Or set NEO_CLI_BIN_DIR environment variable to the correct path"
         exit 1
     }
 }
@@ -206,13 +211,13 @@ function generate_node_config {
     log_success "Generated config for node $node_id"
 }
 
+# Initialize required plugins
 function initialize_plugins {
-    $plugins = @("DBFTPlugin", "RpcServer", "ApplicationLogs")
+    $plugins = @("LevelDBStore", "DBFTPlugin", "RpcServer", "ApplicationLogs")
     
     foreach ($plugin in $plugins) {
-        $plugin_dir = Join-Path $NEO_CLI_DIR "..\..\Neo.Plugins.$plugin\$DOTNET_VERSION"
-        $plugin_target_dir = Join-Path $NEO_CLI_DIR "Plugins\$plugin"
-        
+        $plugin_dir = Join-Path $NEO_NODE_DIR "plugins\$plugin\bin\$BUILD_MODE\$DOTNET_VERSION"
+        $plugin_target_dir = Join-Path $NEO_CLI_BIN_DIR "Plugins\$plugin"
         if (-not (Test-Path $plugin_target_dir)) {
             New-Item -ItemType Directory -Force -Path $plugin_target_dir | Out-Null
         }
@@ -227,14 +232,23 @@ function initialize_plugins {
             Copy-Item -Path $pluginJson -Destination (Join-Path $plugin_target_dir "$plugin.json") -Force
         }
     }
+
+    # $lib_path = Join-Path $NEO_NODE_DIR "plugins\LevelDBStore\bin\$BUILD_MODE\$DOTNET_VERSION\runtimes"
+    # foreach ($platform in "linux-x64", "osx-x64", "win-x64", "linux-arm64", "osx-arm64", "win-arm64") {
+    #     $target_dir = Join-Path $NEO_CLI_BIN_DIR "runtimes\$platform"
+    #     if (-not (Test-Path $target_dir)) {
+    #         New-Item -ItemType Directory -Force -Path $target_dir | Out-Null
+    #     }
+    #     Copy-Item -Path (Join-Path $lib_path "$platform\*") -Destination $target_dir -Recurse -Force
+    # }
 }
 
 # Update plugin configuration files to use local test network ID
 function update_plugin_configs {
     log_info "Updating plugin configurations for local test network..."
 
-    # Find and update all plugin JSON files in the Plugins directory under NEO_CLI_DIR
-    $pluginsDir = Join-Path $NEO_CLI_DIR "Plugins"
+    # Find and update all plugin JSON files in the Plugins directory under NEO_CLI_BIN_DIR
+    $pluginsDir = Join-Path $NEO_CLI_BIN_DIR "Plugins"
     if (Test-Path $pluginsDir) {
         $pluginFiles = Get-ChildItem -Path $pluginsDir -Filter "*.json" -Recurse -File
         
@@ -250,7 +264,7 @@ function update_plugin_configs {
         }
     }
 
-    $dbftConfig = Join-Path $NEO_CLI_DIR "Plugins\DBFTPlugin\DBFTPlugin.json"
+    $dbftConfig = Join-Path $NEO_CLI_BIN_DIR "Plugins\DBFTPlugin\DBFTPlugin.json"
     if (Test-Path $dbftConfig) {
         $content = Get-Content -Path $dbftConfig -Raw
         $content = $content -replace '"AutoStart":\s*false', '"AutoStart": true'
@@ -310,14 +324,13 @@ function start_node {
     }
 
     log_info "Starting node $node_id..."
-    
+
     # Ensure data directory exists
     New-Item -ItemType Directory -Force -Path $data_dir | Out-Null
 
     # Get neo-cli executable path
-    $neoCliExe = Join-Path $NEO_CLI_DIR "neo-cli"
-    $neoCliDll = Join-Path $NEO_CLI_DIR "neo-cli.dll"
-    
+    $neoCliExe = Join-Path $NEO_CLI_BIN_DIR "neo-cli"
+    $neoCliDll = Join-Path $NEO_CLI_BIN_DIR "neo-cli.dll"
     if (-not (Test-Path $neoCliExe) -and -not (Test-Path $neoCliDll)) {
         log_error "neo-cli executable not found"
         return
@@ -334,7 +347,7 @@ function start_node {
     }
 
     log_info "Starting $executable in $data_dir"
-    
+
     # Start neo-cli in background with output redirected to log file
     try {
         # Use Start-Process for background execution (PowerShell equivalent of nohup)
@@ -347,7 +360,7 @@ function start_node {
         $pid = $process.Id
         log_info "node $node_id started with pid $pid"
         Set-Content -Path $pid_file -Value $pid
-        
+
         # Wait a moment and check if process is still running
         Start-Sleep -Seconds 1
         try {
@@ -381,7 +394,7 @@ function start_nodes {
     # Start each node
     for ($i = 0; $i -lt $NODE_COUNT; $i++) {
         # set RpcServer Port to BASE_RPC_PORT + node_id
-        $rpcServerConfig = Join-Path $NEO_CLI_DIR "Plugins\RpcServer\RpcServer.json"
+        $rpcServerConfig = Join-Path $NEO_CLI_BIN_DIR "Plugins\RpcServer\RpcServer.json"
         if (Test-Path $rpcServerConfig) {
             $rpc_port = $BASE_RPC_PORT + $i
             $content = Get-Content -Path $rpcServerConfig -Raw
@@ -437,7 +450,7 @@ function show_status {
     Write-Host "----------------------------------------------"
 
     # if RpcServer plugin not installed, don't show RPC port
-    $rpcServerConfig = Join-Path $NEO_CLI_DIR "Plugins\RpcServer\RpcServer.json"
+    $rpcServerConfig = Join-Path $NEO_CLI_BIN_DIR "Plugins\RpcServer\RpcServer.json"
     $show_rpc_port = Test-Path $rpcServerConfig
 
     if ($show_rpc_port) {
@@ -499,7 +512,7 @@ function show_usage {
     Write-Host "  status    Show status of all nodes"
     Write-Host "  clean     Clean up all node data"
     Write-Host "  restart   Stop and start all nodes"
-    Write-Host "  regenerate Force regenerate all node configurations"
+    Write-Host "  regen     Force regenerate all node configurations"
     Write-Host ""
     Write-Host "Parameters:"
     Write-Host "  node_count    Number of nodes to start (default: 7)"
@@ -507,15 +520,15 @@ function show_usage {
     Write-Host "  base_rpc_port Starting RPC port (default: 10330)"
     Write-Host ""
     Write-Host "Environment Variables:"
-    Write-Host "  NEO_CLI_DIR    Path to neo-cli directory (default: ..\bin\Neo.CLI\$DOTNET_VERSION)"
+    Write-Host "  NEO_NODE_DIR    Path to neo-node directory (default: ../../neo-node)"
     Write-Host ""
     Write-Host "Examples:"
     Write-Host "  .\$scriptName start                    # Start 7 nodes with default ports"
     Write-Host "  .\$scriptName start 7 30000 20000      # Start 7 nodes with P2P ports 30000-30006, RPC ports 20000-20006"
     Write-Host "  .\$scriptName status                   # Show status"
     Write-Host "  .\$scriptName stop                     # Stop all nodes"
-    Write-Host "  .\$scriptName regenerate               # Force regenerate all configurations"
-    Write-Host "  `$env:NEO_CLI_DIR='C:\path\to\neo-cli'; .\$scriptName start  # Use custom neo-cli path"
+    Write-Host "  .\$scriptName regen                    # Force regenerate all configurations"
+    Write-Host "  `$env:NEO_NODE_DIR='C:\path\to\neo-node'; .\$scriptName start  # Use custom neo-node path"
     Write-Host ""
 }
 
@@ -540,7 +553,7 @@ switch ($command) {
         Start-Sleep -Seconds 2
         start_nodes
     }
-    "regenerate" {
+    "regen" {
         log_info "Force regenerating all node configurations..."
         check_neo_cli
         generate_configs -force $true
