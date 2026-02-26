@@ -10,24 +10,24 @@ class StringOps(StdLibTesting):
 
     def _check_string_split_with_null(self):
         # Step 1: check StringSplit(value, separator) with null value
-        message = 'Specified cast is not valid'
+        exception = "can't be null"
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "stringSplit",
                                              [{'type': 'String'}, {'type': 'String', 'value': ','}])
         self.logger.info(f"Invoke 'stringSplit' with null value result: {result}")
-        assert 'exception' in result and message in result['exception']
+        assert 'exception' in result and exception in result['exception']
 
         # Step 2: check StringSplit(value, separator) with null separator
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "stringSplit",
                                              [{'type': 'String', 'value': 'hello,world'}, {'type': 'String'}])
         self.logger.info(f"Invoke 'stringSplit' with null separator result: {result}")
-        assert 'exception' in result and 'Value cannot be null' in result['exception']
+        assert 'exception' in result and exception in result['exception']
 
     def _check_string_len_with_null(self):
         # Step 1: check StringLen(value) with null value
-        message = 'Specified cast is not valid'
+        exception = "can't be null"
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "strLen", [{'type': 'String'}])
         self.logger.info(f"Invoke 'strLen' with null value result: {result}")
-        assert 'exception' in result and message in result['exception']
+        assert 'exception' in result and exception in result['exception']
 
     def _check_string_split_size_limit(self):
         # Step 1: check StringSplit(value, separator) with size limit

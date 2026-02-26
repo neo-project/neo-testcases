@@ -19,7 +19,7 @@ class Base58CheckEncode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check base58CheckEncode with null
-        exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
+        exception = "can't be null"
         self.check_call_with_null("base58CheckEncode", stack=[], exception=exception)
 
         # Step 2: check base58CheckDecode with null

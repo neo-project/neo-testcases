@@ -21,7 +21,7 @@ class Base64Encode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check base64Encode with null
-        exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
+        exception = "can't be null"
         self.check_call_with_null("base64Encode", stack=[], exception=exception)
 
         # Step 2: check base64Decode with null

@@ -23,7 +23,7 @@ class Base64UrlEncode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check base64UrlEncode with null
-        exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
+        exception = "can't be null"
         self.check_call_with_null("base64UrlEncode", stack=[], exception=exception)
 
         # Step 2: check base64UrlDecode with null
