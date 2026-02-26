@@ -22,7 +22,7 @@ class Base58Encode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check base58Encode with null
-        exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
+        exception = "can't be null"
         self.check_call_with_null("base58Encode", stack=[], exception=exception)
 
         # Step 2: check base58Decode with null
@@ -33,7 +33,7 @@ class Base58Encode(StdLibTesting):
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base58Decode",
                                              [{'type': 'String', 'value': encoded}])
         self.logger.info(f"Invoke 'base58Decode' with invalid base58 encoded string result: {result}")
-        assert 'exception' in result and 'nvalid Base58' in result['exception']
+        assert 'exception' in result and 'Invalid Base58 character' in result['exception']
 
     def _check_normal_cases(self):
         # Step 3: check base58Encode with normal data

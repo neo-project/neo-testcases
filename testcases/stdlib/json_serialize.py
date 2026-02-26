@@ -15,7 +15,8 @@ class JsonSerialize(StdLibTesting):
         self.check_call_with_null("jsonSerialize", stack=[('ByteString', value)], exception=None)
 
         # Step 2: check jsonDeserialize with null value
-        self.check_call_with_null("jsonDeserialize", stack=[], exception='The input does not contain any JSON tokens')
+        exception = "can't be null"
+        self.check_call_with_null("jsonDeserialize", stack=[], exception=exception)
 
     def run_test(self):
         # Step 1: Check jsonSerialize and jsonDeserialize with null

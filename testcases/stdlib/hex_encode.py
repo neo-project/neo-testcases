@@ -12,7 +12,7 @@ class HexEncode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check hexEncode with null
-        exception = 'Specified cast is not valid'  # Why 'Specified cast is not valid'?
+        exception = "can't be null"
         self.check_call_with_null("hexEncode", stack=[], exception=exception)
 
         # Step 2: check hexDecode with null
@@ -32,11 +32,13 @@ class HexEncode(StdLibTesting):
         # Step 2: Check invalid hex
         self._check_invalid_hex()
 
-        # Step 3: Check size limit
+        # Step 3: Check `hexEncode` size limit
         self.check_size_limit("hexEncode", pramater_type='ByteArray')
+
+        # Step 4: Check `hexDecode` size limit
         self.check_size_limit("hexDecode", pramater_type='String')
 
-        # Step 3: Check normal cases
+        # Step 5: Check normal cases
         # self._check_normal_cases()
 
 
