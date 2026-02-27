@@ -23,11 +23,10 @@ class Base64UrlEncode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check base64UrlEncode with null
-        exception = "can't be null"
-        self.check_call_with_null("base64UrlEncode", stack=[], exception=exception)
+        self.check_call_with_null("base64UrlEncode", stack=[], exception="can't be null")
 
         # Step 2: check base64UrlDecode with null
-        self.check_call_with_null("base64UrlDecode", stack=[], exception=exception)
+        self.check_call_with_null("base64UrlDecode", stack=[], exception="can't be null")
 
     def _check_invalid_base64url(self):
         encoded = "????"

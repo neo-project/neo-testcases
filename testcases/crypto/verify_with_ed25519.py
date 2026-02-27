@@ -11,6 +11,8 @@ import ecdsa
 # 2. The public key is a 32 bytes ed25519 public key, exception if the public key is null, and always false if the public key is invalid
 # 3. The signature is a 64 bytes signature, false if the signature is invalid, exception if the signature is null
 # 4. The message is a bytes, result is always false if the message is null even if the public key and signature are valid
+# 5. verifyWithEd25519 has different behaviors in N3 and N4 if Signature.Length isn't 64 and PublicKey.Length isn't 32.
+#    In N3, if signature.Length isn't 64 or PubicKey.Length isn't 32, it will return false, but exception in N4.
 # Expect Result: The native contract CryptoLib.verifyWithEd25519 function is working as expected.
 class VerifyWithEd25519(Testing):
     def __init__(self):
@@ -46,41 +48,41 @@ class VerifyWithEd25519(Testing):
     def _check_invalid_parameters(self):
         # Step 1: verify with invalid parameter number.
         self.logger.info("Test verifyWithEd25519 with null parameter")
-        self._check_verify_with_ed25519(
-            [None], exception='"verifyWithEd25519" with 1 parameter(s) doesn\'t exist in the contract')
+
+        data = b"hello world"
+        self._check_verify_with_ed25519([None], exception='with 1 parameter(s) doesn\'t exist in the contract')
 
         # Step 2: verify with invalid public key.
         self.logger.info("Test verifyWithEd25519 with invalid public key")
-        self._check_verify_with_ed25519([b"hello world", b'1' * 33, b'2' * 64],
-                                        result=False)
+        # N4 has exception if PublicKey.Length isn't 32, but N3 has false.
+        self._check_verify_with_ed25519([data, b'1' * 33, b'2' * 64], result=False)
 
         # Step 3: verify with invalid signature.
         self.logger.info("Test verifyWithEd25519 with invalid signature")
-        self._check_verify_with_ed25519([b"hello world", b'1' * 32, b'2' * 63],
-                                        result=False)
+        # N4 has exception if signature.Length isn't 64, but N3 has false.
+        self._check_verify_with_ed25519([data, b'1' * 32, b'2' * 63], result=False)
 
         # Step 4: verify with null signature.
         self.logger.info("Test verifyWithEd25519 with null signature")
-        self._check_verify_with_ed25519([b"hello world", b'1' * 32, None],
-                                        exception='not set to an instance of an object')
+        self._check_verify_with_ed25519([data, b'1' * 32, None], exception="can't be null")
 
         # Step 5: verify with null public key.
         self.logger.info("Test verifyWithEd25519 with null public key")
-        self._check_verify_with_ed25519([b"hello world", None, b'2' * 64],
-                                        exception='not set to an instance of an object')
+        self._check_verify_with_ed25519([data, None, b'2' * 64], exception="can't be null")
 
         # Step 6: verify with null message.
         self.logger.info("Test verifyWithEd25519 with null message")
-        self._check_verify_with_ed25519([None, b'1' * 32, b'2' * 64],
-                                        result=False)
+        self._check_verify_with_ed25519([None, b'1' * 32, b'2' * 64], exception="can't be null")
 
     def _check_ed25519(self):
         # Step 1: verify with valid ed25519SHA256
         self.logger.info("Test verifyWithEd25519 with valid ed25519SHA256")
+
+        data = b"hello world"
         private_key = ecdsa.SigningKey.generate(curve=ecdsa.Ed25519)
         public_key = private_key.get_verifying_key().to_string('raw')
-        signature = private_key.sign(b"hello world", hashfunc=hashlib.sha256)
-        self._check_verify_with_ed25519([b"hello world", public_key, signature], result=True)
+        signature = private_key.sign(data, hashfunc=hashlib.sha256)
+        self._check_verify_with_ed25519([data, public_key, signature], result=True)
 
         # Step 2: verify with empty message.
         self.logger.info("Test verifyWithEd25519 with empty message")
@@ -89,12 +91,11 @@ class VerifyWithEd25519(Testing):
 
         # Step 3: verify with mismatch signature.
         self.logger.info("Test verifyWithEd25519 with mismatch signature")
-        self._check_verify_with_ed25519([b"hello world", public_key, b'2' * 64],
-                                        result=False)
+        self._check_verify_with_ed25519([data, public_key, b'2' * 64], result=False)
 
         self.logger.info("Test verifyWithEd25519 with null message")
         signature = private_key.sign(b'', hashfunc=hashlib.sha256)
-        self._check_verify_with_ed25519([None, public_key, signature], result=False)
+        self._check_verify_with_ed25519([None, public_key, signature], exception="can't be null")
 
     def run_test(self):
         self._check_invalid_parameters()

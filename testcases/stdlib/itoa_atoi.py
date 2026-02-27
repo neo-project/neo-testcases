@@ -10,16 +10,15 @@ class ItoaAtoi(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check Itoa with null
-        exception = "can't be null"
-        self.check_call_with_null("itoa", stack=[], exception=exception)
+        self.check_call_with_null("itoa", stack=[], exception="can't be null")
 
         # Step 2: check Atoi with null
-        self.check_call_with_null("atoi", stack=[], exception=exception)
+        self.check_call_with_null("atoi", stack=[], exception="can't be null")
 
         # Step 2: check Itoa with null string
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, 'itoa', [{'type': 'String'}])
         self.logger.info(f"Invoke 'itoa' with null string result: {result}")
-        assert 'exception' in result and exception in result['exception']
+        assert 'exception' in result and "can't be null" in result['exception']
 
     def _check_atoi_base10(self):
         # Step 1: check Atoi with '0' string

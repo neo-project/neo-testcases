@@ -16,10 +16,12 @@ class FeeTesting(Testing):
 
         # Step 1: get the exec_fee_factor
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecFeeFactor", [])
+        self.logger.info(f"getExecFeeFactor result: {result}")
         assert 'stack' in result and len(result['stack']) == 1, f"Expected 'stack' in result, got {result}"
         self.exec_fee_factor = int(result['stack'][0]['value'])
 
         # Step 2: get the fee_per_byte
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getFeePerByte", [])
+        self.logger.info(f"getFeePerByte result: {result}")
         assert 'stack' in result and len(result['stack']) == 1, f"Expected 'stack' in result, got {result}"
         self.fee_per_byte = int(result['stack'][0]['value'])

@@ -27,13 +27,18 @@ class Keccak256Testing(Testing):
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "keccak256", params)
         self.logger.info(f"Invoke keccak256 with null bytes result: {result}")
 
-        expected = 'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'
-        self._check_keccak256_result_stack(result['stack'], expected)
+        # The behavior of keccak256 API is changed in HF_Faun
+        # expected = 'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'
+        # self._check_keccak256_result_stack(result['stack'], expected)
+        assert 'exception' in result and "can't be null" in result['exception']
 
         # Step 2: invoke the keccak256 hash function with null
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "keccak256", [{'type': 'ByteArray'}])
         self.logger.info(f"Invoke keccak256 with null result: {result}")
-        self._check_keccak256_result_stack(result['stack'], expected)
+
+        # The behavior of keccak256 API is changed in HF_Faun
+        # self._check_keccak256_result_stack(result['stack'], expected)
+        assert 'exception' in result and "can't be null" in result['exception']
 
     def _check_invoke_keccak256(self):
         # Step 1: invoke the keccak256 hash function
@@ -83,10 +88,11 @@ class Keccak256Testing(Testing):
 
         execution = application_log['executions'][0]
         assert 'trigger' in execution and execution['trigger'] == 'Application'
-        assert execution['vmstate'] == 'HALT'
-
-        expected = 'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'
-        self._check_keccak256_result_stack(execution['stack'], expected)
+        # assert execution['vmstate'] == 'HALT' # The behavior of keccak256 API is changed in HF_Faun
+        assert execution['vmstate'] == 'FAULT'
+        assert 'exception' in execution and "can't be null" in execution['exception']
+        # expected = 'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'
+        # self._check_keccak256_result_stack(execution['stack'], expected)
 
     def run_test(self):
         self._check_keccak256_null_checking()

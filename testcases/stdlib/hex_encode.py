@@ -12,11 +12,10 @@ class HexEncode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check hexEncode with null
-        exception = "can't be null"
-        self.check_call_with_null("hexEncode", stack=[], exception=exception)
+        self.check_call_with_null("hexEncode", stack=[], exception="can't be null")
 
         # Step 2: check hexDecode with null
-        self.check_call_with_null("hexDecode", stack=[], exception=exception)
+        self.check_call_with_null("hexDecode", stack=[], exception="can't be null")
 
     def _check_invalid_hex(self):
         encoded = "????"
