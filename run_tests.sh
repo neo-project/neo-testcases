@@ -10,6 +10,7 @@ groups=(
     "ledger"
     "policy"
     "stdlib"
+    "notary"
     "plugins/rpcserver"
 )
 

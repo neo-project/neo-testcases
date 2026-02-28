@@ -3,20 +3,40 @@ import hashlib
 from typing import Self
 from dataclasses import asdict, dataclass
 
-from neo import UInt160, CallFlags, CONTRACT_HASHES
+from neo import UInt160, CallFlags
 
-NEO_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.NEO_TOKEN)
-GAS_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.GAS_TOKEN)
-POLICY_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.POLICY)
-CRYPTO_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.CRYPTO_LIB)
-STDLIB_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.STD_LIB)
-LEDGER_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.LEDGER)
-ROLE_MANAGEMENT_CONTRACT_HASH = '0x' + str(CONTRACT_HASHES.ROLE_MANAGEMENT)
+NEO_CONTRACT_HASH = '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5'
+GAS_CONTRACT_HASH = '0xd2a4cff31913016155e38e474a2c06d08be276cf'
+POLICY_CONTRACT_HASH = '0xcc5e4edd9f5f8dba8bb65734541df7a1c081c67b'
+CRYPTO_CONTRACT_HASH = '0x726cb6e0cd8628a1350a611384688911ab75f51b'
+STDLIB_CONTRACT_HASH = '0xacce6fd80d44e1796aa0c2c625e9e4e0ce39efc0'
+LEDGER_CONTRACT_HASH = '0xda65b600f7124ce6c79950c1772a36403104f2be'
+NOTARY_CONTRACT_HASH = '0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b'
+ROLE_MANAGEMENT_CONTRACT_HASH = '0x49cf4e5378ffcd4dec034fd98a174c5491e395e2'
+ORACLE_CONTRACT_HASH = '0xfe924b7cfe89ddd271abaf7210a80a7e11178758'
+TREASURY_CONTRACT_HASH = '0x156326f25b1b5d839a4d326aeaa75383c9563ac1'
 
 
 @dataclass
 class ContractParameter:
-    type: str  # 'Any', 'Boolean', 'ByteArray', 'Integer', 'String', 'Array', 'Map', 'PublicKey', 'Hash160', 'Hash256', 'Signature', 'InteropInterface', 'Void'
+    '''
+    ContractParameter is used to pass parameters to a contract method.
+    The type can be:
+    - Any
+    - Boolean
+    - ByteArray
+    - Integer
+    - String
+    - Array
+    - Map
+    - PublicKey
+    - Hash160
+    - Hash256
+    - Signature
+    - InteropInterface
+    - Void
+    '''
+    type: str
     value: any
 
     def to_dict(self):

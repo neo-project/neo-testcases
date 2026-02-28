@@ -372,7 +372,7 @@ stop_node() {
         local pid=$(cat "$pid_file")
         if kill -0 $pid 2>/dev/null; then
             log_info "Stopping node $node_id (PID: $pid)..."
-            kill $pid
+            kill -9 $pid
             rm -f "$pid_file"
             log_success "Node $node_id stopped"
         else
