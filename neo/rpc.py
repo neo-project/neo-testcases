@@ -53,6 +53,9 @@ class RpcClient:
     def get_committee(self) -> list:
         return self.send("getcommittee", [])
 
+    def get_version(self) -> dict:
+        return self.send("getversion", [])
+
     def get_wallet_balance(self, address: str | UInt160) -> dict:
         address = str(address) if isinstance(address, UInt160) else address
         return self.send("getwalletbalance", [address])

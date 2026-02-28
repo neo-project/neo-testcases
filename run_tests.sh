@@ -10,15 +10,16 @@ groups=(
     "ledger"
     "policy"
     "stdlib"
+    "notary"
     "plugins/rpcserver"
 )
 
-selected_groups=${groups[@]}
+selected=${groups[@]}
 skip_initial=false
 while [[ $# -gt 0 ]]; do
   case $1 in
     --groups)
-      selected_groups=($2)
+      selected=($2)
       shift 2
       ;;
     --skip-initial)
@@ -34,7 +35,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # validate selected groups
-for group in ${selected_groups[@]}; do
+for group in ${selected[@]}; do
     if [[ ! " ${groups[@]} " =~ " ${group} " ]]; then
         echo "$(date) - Invalid group: $group"
         exit 1
@@ -53,7 +54,7 @@ if [ "$skip_initial" = false ]; then
     fi
 fi
 
-for group in ${selected_groups[@]}; do
+for group in ${selected[@]}; do
     echo "$(date) - Running $group tests..."
     for file in testcases/$group/*.py; do
         basename=$(basename $file .py) # remove the .py extension
