@@ -25,8 +25,7 @@ class BinarySerialize(StdLibTesting):
         self.check_call_with_null("serialize", stack=[('ByteString', 'AA==')], exception=None)
 
         # Step 2: check deserialize with null
-        exception = "can't be null"
-        self.check_call_with_null("deserialize", stack=[], exception=exception)
+        self.check_call_with_null("deserialize", stack=[], exception="can't be null")
 
     def run_test(self):
         # Step 1: Check argument with null

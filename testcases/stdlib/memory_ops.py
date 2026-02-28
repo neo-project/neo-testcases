@@ -12,35 +12,33 @@ class MemoryOps(StdLibTesting):
 
     def _check_memory_compare_with_null(self):
         # Step 1: check MemoryCompare(value1, value2) with null value1
-        exception = "can't be null"
         value2 = base64.b64encode(b'hello').decode('utf-8')
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "memoryCompare",
                                              [{'type': 'ByteArray'}, {'type': 'ByteArray', 'value': value2}])
         self.logger.info(f"Invoke 'memoryCompare' with null value1 result: {result}")
-        assert 'exception' in result and exception in result['exception']
+        assert 'exception' in result and "can't be null" in result['exception']
 
         # Step 2: check MemoryCompare(value1, value2) with null value2
         value1 = base64.b64encode(b'hello').decode('utf-8')
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "memoryCompare",
                                              [{'type': 'ByteArray', 'value': value1}, {'type': 'ByteArray'}])
         self.logger.info(f"Invoke 'memoryCompare' with null value2 result: {result}")
-        assert 'exception' in result and exception in result['exception']
+        assert 'exception' in result and "can't be null" in result['exception']
 
     def _check_memory_search_with_null(self):
         # Step 1: check MemorySearch(value, pattern) with null value
-        exception = "can't be null"
         pattern = base64.b64encode(b'hello').decode('utf-8')
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "memorySearch",
                                              [{'type': 'ByteArray'}, {'type': 'ByteArray', 'value': pattern}])
         self.logger.info(f"Invoke 'memorySearch' with null value result: {result}")
-        assert 'exception' in result and exception in result['exception']
+        assert 'exception' in result and "can't be null" in result['exception']
 
         # Step 2: check MemorySearch(value, pattern) with null pattern
         value = base64.b64encode(b'hello').decode('utf-8')
         result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "memorySearch",
                                              [{'type': 'ByteArray', 'value': value}, {'type': 'ByteArray'}])
         self.logger.info(f"Invoke 'memorySearch' with null pattern result: {result}")
-        assert 'exception' in result and exception in result['exception']
+        assert 'exception' in result and "can't be null" in result['exception']
 
     def _check_memory_compare_size_limit(self):
         data = base64.b64encode(b'01234').decode('utf-8')

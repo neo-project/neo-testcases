@@ -22,11 +22,10 @@ class Base58Encode(StdLibTesting):
 
     def _check_argument_null(self):
         # Step 1: check base58Encode with null
-        exception = "can't be null"
-        self.check_call_with_null("base58Encode", stack=[], exception=exception)
+        self.check_call_with_null("base58Encode", stack=[], exception="can't be null")
 
         # Step 2: check base58Decode with null
-        self.check_call_with_null("base58Decode", stack=[], exception=exception)
+        self.check_call_with_null("base58Decode", stack=[], exception="can't be null")
 
     def _check_invalid_base58(self):
         encoded = "0000"

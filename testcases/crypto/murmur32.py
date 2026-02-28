@@ -23,7 +23,10 @@ class Murmur32Testing(Testing):
         # Step 2: invoke the murmur32 hash function with null bytes
         params = [ContractParameter(type="ByteArray", value=None), ContractParameter(type="Integer", value=0)]
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "murmur32", params)
-        self._check_murmur32_result_stack(result['stack'], '00000000')
+
+        # The behavior of murmur32 API is changed in HF_Faun
+        # self._check_murmur32_result_stack(result['stack'], '00000000')
+        assert 'exception' in result and "can't be null" in result['exception']
 
     def _check_invoke_murmur32(self):
         # Step 1: invoke the murmur32 hash function
@@ -52,8 +55,10 @@ class Murmur32Testing(Testing):
         # Murmur32 OK if the argument is null or 0.
         execution = application_log['executions'][0]
         assert 'trigger' in execution and execution['trigger'] == 'Application'
-        assert execution['vmstate'] == 'HALT'
-        self._check_murmur32_result_stack(execution['stack'], '00000000')
+        # assert execution['vmstate'] == 'HALT'  # The behavior of murmur32 API is changed in HF_Faun
+        # self._check_murmur32_result_stack(execution['stack'], '00000000')
+        assert execution['vmstate'] == 'FAULT'
+        assert 'exception' in execution and "can't be null" in execution['exception']
 
         # Step 2: create a transaction to invoke the murmur32 hash function with valid bytes
         script = ScriptBuilder().emit_dynamic_call(
@@ -65,9 +70,9 @@ class Murmur32Testing(Testing):
         block_index = self.client.get_block_index()
         self.wait_next_block(block_index)
 
+        # Step 3: check the application log
         application_log = self.client.get_application_log(tx_id)
         self.logger.info(f"Application log with valid bytes and 0: {application_log}")
-
         execution = application_log['executions'][0]
         assert 'trigger' in execution and execution['trigger'] == 'Application'
         assert execution['vmstate'] == 'HALT'
