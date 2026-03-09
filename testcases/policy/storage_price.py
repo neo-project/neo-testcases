@@ -59,8 +59,7 @@ class StoragePrice(Testing):
 
         # Step 5: send the transaction to the network
         tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_netfee, block_index+10)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"No permission update storage_price transaction sent: {tx_id}")
 
         # Step 6: wait for the next block
@@ -80,8 +79,7 @@ class StoragePrice(Testing):
     def _check_committee_update_storage_price(self, storage_price: int):
         # Step 9: set the storage_price to `storage_price` by validators
         tx = self._make_update_storage_price_tx(storage_price)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"committee update storage_price transaction sent: {tx_id}")
 
         # Step 10: wait for the next block
@@ -106,8 +104,7 @@ class StoragePrice(Testing):
     def _check_storage_price_range(self):
         # Step 13: check the storage_price range
         tx = self._make_update_storage_price_tx(self.min_storage_price - 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"update storage_price to {self.min_storage_price - 1} transaction sent: {tx_id}")
 
         # Step 14: wait for the next block
@@ -126,8 +123,7 @@ class StoragePrice(Testing):
             execution, exception=f'StoragePrice must be between [{self.min_storage_price}, {self.max_storage_price}]')
 
         tx = self._make_update_storage_price_tx(self.max_storage_price + 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"update storage_price to {self.max_storage_price + 1} transaction sent: {tx_id}")
 
         # Step 16: wait for the next block

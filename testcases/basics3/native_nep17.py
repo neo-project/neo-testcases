@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import GAS_CONTRACT_HASH, NEO_CONTRACT_HASH
-from testcases.basics.base import BasicsTesting
+from testcases.basics3.base import BasicsTesting
 
 
 # Operation: check the NEO and GAS token basics.
@@ -19,6 +19,7 @@ class NativeNep17(BasicsTesting):
     def __init__(self):
         super().__init__("NativeNep17")
         self.claimed_gas_per_block = 5 * 1000_0000  # 0.5 GAS per block
+        self.neo3_only = True # NEO4 has different GAS and NEO contract.
 
     def _check_neo_token_basics(self):
         # Step 1: check the NEO token symbol
@@ -93,7 +94,7 @@ class NativeNep17(BasicsTesting):
         self._check_claimed_gas_per_block()
 
 
-# Run with: python3 -B -m testcases.basics.native_nep17
+# Run with: python3 -B -m testcases.basics3.native_nep17
 if __name__ == "__main__":
     test = NativeNep17()
     test.run()

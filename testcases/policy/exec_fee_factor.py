@@ -59,8 +59,7 @@ class ExecFeeFactor(Testing):
 
         # Step 5: send the transaction to the network
         tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_netfee, block_index+10)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"No permission update exec_fee_factor transaction sent: {tx_id}")
 
         # Step 6: wait for the next block
@@ -80,8 +79,7 @@ class ExecFeeFactor(Testing):
     def _check_committe_update_exec_fee_factor(self, exec_fee_factor: int):
         # Step 9: set the exec fee factor to UPDATED_EXEC_FEE_FACTOR by validators
         tx = self._make_update_exec_fee_factor_tx(exec_fee_factor)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"committee update exec_fee_factor transaction sent: {tx_id}")
 
         # Step 10: wait for the next block
@@ -106,8 +104,7 @@ class ExecFeeFactor(Testing):
     def _check_exec_fee_factor_range(self):
         # Step 13: check the exec fee factor range
         tx = self._make_update_exec_fee_factor_tx(self.min_exec_fee_factor - 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"update exec_fee_factor to {self.min_exec_fee_factor - 1} transaction sent: {tx_id}")
 
         # Step 14: wait for the next block
@@ -126,8 +123,7 @@ class ExecFeeFactor(Testing):
             execution, exception=f'ExecFeeFactor must be between [{self.min_exec_fee_factor}, {self.max_exec_fee_factor}]')
 
         tx = self._make_update_exec_fee_factor_tx(self.max_exec_fee_factor + 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"update exec_fee_factor to {self.max_exec_fee_factor + 1} transaction sent: {tx_id}")
 
         # Step 16: wait for the next block
