@@ -1,7 +1,7 @@
 
 from neo import Hardforks, OpCode
 from neo.contract import *
-from testcases.fee.base import FeeTesting
+from testcases.system.fee.base import FeeTesting
 
 
 # Operation: Send a tx, the consumed sysfee depends on the opcode and operations and exec_fee_factor.
@@ -87,7 +87,7 @@ class SystemFeeExecFactor(FeeTesting):
         self._update_exec_fee_factor(self.exec_fee_factor)
 
 
-# Run with: python3 -B -m testcases.fee.sysfee_exec_factor
+# Run with: python3 -B -m testcases.system.fee.sysfee_exec_factor
 if __name__ == "__main__":
     test = SystemFeeExecFactor()
     test.run()

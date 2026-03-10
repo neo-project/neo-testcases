@@ -1,7 +1,7 @@
 
 from neo import OpCode
 from neo.contract import *
-from testcases.fee.base import FeeTesting
+from testcases.system.fee.base import FeeTesting
 
 
 # Operation: Send a tx, the consumed sysfee depends on the opcode and operations.
@@ -57,7 +57,7 @@ class SystemFeeConsumed(FeeTesting):
         self.check_execution_result(execution, stack=[('Integer', '1')])
 
 
-# Run with: python3 -B -m testcases.fee.sysfee_comsumed
+# Run with: python3 -B -m testcases.system.fee.sysfee_consumed
 if __name__ == "__main__":
     test = SystemFeeConsumed()
     test.run()

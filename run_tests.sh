@@ -5,12 +5,13 @@ echo "$(date) - Running tests..."
 groups=(
     "basics"
     "crypto"
-    "fee"
     "governance"
     "ledger"
-    "policy"
-    "stdlib"
     "notary"
+    "policy"
+    "rolemanagement"
+    "stdlib"
+    "system/fee"
     "plugins/rpcserver"
 )
 
