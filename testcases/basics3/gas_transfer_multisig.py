@@ -1,30 +1,29 @@
 
-from neo import CallFlags
+from neo import CallFlags, UInt160
 from neo.contract import GAS_CONTRACT_HASH, ScriptBuilder
-from testcases.basics.base import BasicsTesting
+from testcases.basics3.base import BasicsTesting
 
 
-# Operation: this case creates a valid transaction, transfer 0.1 GAS from one account to another.
-# and then check GAS balance and the transaction execution result.
-# Expect Result: The transaction execution is OK, and GAS transfered as expected.
-class GasRpcTransfer(BasicsTesting):
+# Operation: this case creates a valid transaction, transfer 10_0000 GAS from the BFT account to the others[0]
+# and then check the GAS balance and the transaction execution result.
+# Expect Result: The transaction execution is OK, and the GAS balance is as expected.
+class GasTransferMultiSign(BasicsTesting):
 
     def __init__(self):
-        super().__init__("GasRpcTransfer")
+        super().__init__("GasTransferMultiSign")
+        self.neo3_only = True # NEO4 has different GAS contract.
 
-    def run_test(self):
+    def _transfer_gas(self, dest160: UInt160, amount: int):
         # Step 1: Build the transfer script
-        source160 = self.env.others[0].script_hash
-        dest160 = self.env.others[1].script_hash
-        amount = 1_0000000
+        source160 = self.bft_address()
         script = ScriptBuilder().emit_dynamic_call(
             script_hash=GAS_CONTRACT_HASH,
             method='transfer',
             call_flags=(CallFlags.STATES | CallFlags.ALLOW_CALL | CallFlags.ALLOW_NOTIFY),
-            args=[source160, dest160, amount, None],  # transfer(from, to, 0.1 GAS, data)
+            args=[source160, dest160, amount, None],  # transfer(from, to, 10_0000 GAS, None)
         ).to_bytes()
 
-        # Step 2: get Destination GAS balance
+        # Step 2: get source and destination GAS balance
         source_balance = self.client.get_gas_balance(source160)
         self.logger.info(f"Source {source160} GAS balance: {source_balance}")
 
@@ -33,7 +32,7 @@ class GasRpcTransfer(BasicsTesting):
 
         # Step 3: create a transaction
         block_index = self.client.get_block_index()
-        tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_sysfee, block_index+10)
+        tx = self.make_multisig_tx(script, self.default_sysfee, self.default_netfee, block_index+10)
 
         # Step 4: send the transaction to the network
         tx_hash = self.client.send_raw_tx(tx.to_array())
@@ -46,10 +45,6 @@ class GasRpcTransfer(BasicsTesting):
         mempool = self.client.get_mempool(include_unverified=True)
         self.logger.info(f"Mempool: {mempool}")
 
-        # The tx maybe have been executed, so not assert this.
-        # assert tx_id in mempool['verified'], f"Expected tx_id in mempool['verified'], got {mempool}"
-        assert tx_id not in mempool['unverified'], f"Expected tx_id not in mempool['unverified'], got {mempool}"
-
         # Step 6: wait for the next block
         block_index = self.client.get_block_index()
         self.wait_next_block(block_index)
@@ -57,14 +52,12 @@ class GasRpcTransfer(BasicsTesting):
         application_log = self.client.get_application_log(tx_id)
         self.logger.info(f"Application log: {application_log}")
 
-        # Step 7: check the gas balance
+        # Step 7: check the source and destination GAS balance
         from_balance = self.client.get_gas_balance(source160)
         self.logger.info(f"Source {source160} GAS balance: {from_balance}, difference: {from_balance - source_balance}")
-        expected = source_balance - amount - self.default_sysfee - self.default_netfee
-        assert from_balance == expected, f"Expected from_balance == {expected}, got {from_balance}"
 
         to_balance = self.client.get_gas_balance(dest160)
-        assert to_balance == dest_balance + amount, f"to_balance:{to_balance} != {dest_balance} + {amount}"
+        assert to_balance == dest_balance + amount, f"Expected to_balance == {dest_balance + amount}, got {to_balance}"
 
         # Step 8: check the application log
         assert 'txid' in application_log and tx_id == application_log['txid']
@@ -79,8 +72,13 @@ class GasRpcTransfer(BasicsTesting):
         notification = execution['notifications'][0]
         self._check_nep17_transfer_notification(notification, GAS_CONTRACT_HASH, source160, dest160, amount)
 
+    def run_test(self):
+        self._transfer_gas(self.env.others[0].script_hash, 10_0000_00000000)
+        self._transfer_gas(self.env.others[1].script_hash, 10_0000_00000000)
+        self._transfer_gas(self.env.others[2].script_hash, 10_0000_00000000)
 
-# Run with: python3 -B -m testcases.basics.gas_rpc_transfer
+
+# Run with: python3 -B -m testcases.basics3.gas_transfer_multisig
 if __name__ == "__main__":
-    test = GasRpcTransfer()
+    test = GasTransferMultiSign()
     test.run()

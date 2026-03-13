@@ -1,7 +1,7 @@
 
 from neo.contract import *
-from testcases.basics.gas_rpc_transfer_multisig import GasRpcTransferMultiSign
-from testcases.basics.neo_rpc_transfer_multisig import NeoRpcTransferMultiSign
+from testcases.basics3.gas_transfer_multisig import GasTransferMultiSign
+from testcases.basics3.neo_transfer_multisig import NeoTransferMultiSign
 from testcases.testing import Testing
 
 
@@ -14,11 +14,11 @@ class TestingInitial(Testing):
 
     def run_test(self):
         # Step 1: initialize the NEO balance of the others[0]
-        neo_initial = NeoRpcTransferMultiSign()
+        neo_initial = NeoTransferMultiSign()
         neo_initial.run()
 
         # Step 2: initialize the GAS balance of the others[0]
-        gas_initial = GasRpcTransferMultiSign()
+        gas_initial = GasTransferMultiSign()
         gas_initial.run()
 
         # Step 3: initialize the GAS balance from bft-address to committee-address
@@ -46,9 +46,7 @@ class TestingInitial(Testing):
         # Step 3: send the transaction to the network
         block_index = self.client.get_block_index()
         tx =self.make_multisig_tx(script, self.default_sysfee, self.default_netfee, block_index + 10)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"Transaction for initializing GAS balance of validator[0] sent: {tx_id}")
 
         # Step 4: wait for the next block
@@ -86,8 +84,7 @@ class TestingInitial(Testing):
         # Step 3: send the transaction to the network
         block_index = self.client.get_block_index()
         tx = self.make_multisig_tx(script, self.default_sysfee, self.default_netfee, block_index+10)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"Transaction for initializing GAS balance of committee sent: {tx_id}")
 
         # Step 4: wait for the next block

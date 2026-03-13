@@ -18,6 +18,7 @@ class CandidateRegister(Testing):
     def __init__(self):
         super().__init__("CandidateRegister")
         self.register_price = 1000_00000000  # 1000 GAS
+        self.neo3_only = True # NEO4 has different Governance contract.
 
     def _get_register_price(self):
         result = self.client.invoke_function(NEO_CONTRACT_HASH, "getRegisterPrice", [])
@@ -139,7 +140,7 @@ class CandidateRegister(Testing):
         self._register_with_ok(self.env.others[1])
 
 
-# Run with: python3 -B -m testcases.governance.candidate_register
+# Run with: python3 -B -m testcases.governance3.candidate_register
 if __name__ == "__main__":
     test = CandidateRegister()
     test.run()

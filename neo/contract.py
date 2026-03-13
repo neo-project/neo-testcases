@@ -116,7 +116,7 @@ class ScriptBuilder:
         elif isinstance(item, list) or isinstance(item, tuple):
             self.emit_push_array(item)
         elif hasattr(item, 'to_array'):
-            item = item.to_array()
+            item = item.to_array()  # UInt160, UInt256, etc.
             if not isinstance(item, bytes):
                 raise ValueError(f"Unsupported item type: {type(item)}")
             self.emit_push_bytes(item)
