@@ -1,7 +1,7 @@
 
 from neo import OpCode
 from neo.contract import *
-from testcases.fee.base import FeeTesting
+from testcases.system.fee.base import FeeTesting
 
 
 # Operation: Send a tx, the netfee depends on the tx size, verification cost and tx-attributes fee.
@@ -80,7 +80,7 @@ class NetworkFeeSizeFee(FeeTesting):
         self._update_fee_per_byte(self.fee_per_byte)
 
 
-# Run with: python3 -B -m testcases.fee.netfee_size_fee
+# Run with: python3 -B -m testcases.system.fee.netfee_size_fee
 if __name__ == "__main__":
     test = NetworkFeeSizeFee()
     test.run()

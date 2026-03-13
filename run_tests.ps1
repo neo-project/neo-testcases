@@ -1,26 +1,28 @@
+#!/usr/bin/env pwsh
 # Run tests in the tests directory
 
 Write-Host "$(Get-Date) - Running tests..."
-
 $groups = @(
     "basics3"
     "crypto"
     "fee"
     "governance3"
     "ledger"
-    "policy"
-    "stdlib"
     "notary"
+    "policy"
+    "rolemanagement"
+    "stdlib"
+    "system/fee"
     "plugins/rpcserver"
 )
 
-$selected_groups = $groups
+$selected = $groups
 $skip_initial = $false
 while ($args.Length -gt 0) {
     $arg = $args[0]
     switch ($arg) {
         "--groups" {
-            $selected_groups = $args[1].Split(',')
+            $selected = $args[1].Split(',')
             $args = $args[2..$args.Length]
             break
         }
@@ -39,7 +41,7 @@ while ($args.Length -gt 0) {
 }
 
 # validate selected groups
-foreach ($group in $selected_groups) {
+foreach ($group in $selected) {
     if ($group -notin $groups) {
         Write-Host "$(Get-Date) - Invalid group: $group"
         exit 1
@@ -58,7 +60,7 @@ if (-not $skip_initial) {
     }
 }
 
-foreach ($group in $selected_groups) {
+foreach ($group in $selected) {
     Write-Host "$(Get-Date) - Running $group tests..."
 
     $testFiles = Get-ChildItem -Path "testcases\$group\*.py"

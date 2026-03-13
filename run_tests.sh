@@ -8,9 +8,11 @@ groups=(
     "fee"
     "governance3"
     "ledger"
-    "policy"
-    "stdlib"
     "notary"
+    "policy"
+    "rolemanagement"
+    "stdlib"
+    "system/fee"
     "plugins/rpcserver"
 )
 
