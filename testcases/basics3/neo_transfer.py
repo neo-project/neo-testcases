@@ -1,16 +1,17 @@
 
 from neo import CallFlags
 from neo.contract import NEO_CONTRACT_HASH, ScriptBuilder
-from testcases.basics.base import BasicsTesting
+from testcases.basics3.base import BasicsTesting
 
 
 # Operation: this case creates a valid transaction, transfer 1 NEO from the others[0] account to the others[1] account.
 # and then check the NEO balance and the transaction execution result.
 # Expect Result: The transaction execution is OK, and the NEO balance is as expected.
-class NeoRpcTransfer(BasicsTesting):
+class NeoTransfer(BasicsTesting):
 
     def __init__(self):
-        super().__init__("NeoRpcTransfer")
+        super().__init__("NeoTransfer")
+        self.neo3_only = True # NEO4 has different NEO contract.
 
     def run_test(self):
         # Step 1: Build the transfer script
@@ -71,7 +72,7 @@ class NeoRpcTransfer(BasicsTesting):
         self._check_neo_transfer_application_log(tx_id, application_log, source160, dest160, str(amount))
 
 
-# Run with: python3 -B -m testcases.basics.neo_rpc_transfer
+# Run with: python3 -B -m testcases.basics3.neo_transfer
 if __name__ == "__main__":
-    test = NeoRpcTransfer()
+    test = NeoTransfer()
     test.run()

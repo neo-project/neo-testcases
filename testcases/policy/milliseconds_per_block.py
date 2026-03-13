@@ -18,7 +18,7 @@ class MillisecondsPerBlock(Testing):
         self.updated_millis_per_block = 10_000
         self.min_millis_per_block = 1
         self.max_millis_per_block = 30_000
-        self.neo3_only = True
+        self.neo3_only = True  # NEO4 hasn't milliseconds_per_block policy.
         self.hardfork = Hardforks.HF_Echidna
 
     def _make_update_millis_per_block_tx(self, millis_per_block: int):
@@ -63,8 +63,7 @@ class MillisecondsPerBlock(Testing):
 
         # Step 5: send the transaction to the network
         tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_netfee, block_index+10)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"No permission update millis_per_block transaction sent: {tx_id}")
 
         # Step 6: wait for the next block
@@ -84,8 +83,7 @@ class MillisecondsPerBlock(Testing):
     def _check_committee_update_millis_per_block(self, millis_per_block: int):
         # Step 9: set the millis_per_block to `millis_per_block` by validators
         tx = self._make_update_millis_per_block_tx(millis_per_block)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"committee update millis_per_block transaction sent: {tx_id}")
 
         # Step 10: wait for the next block
@@ -110,8 +108,7 @@ class MillisecondsPerBlock(Testing):
     def _check_millis_per_block_range(self):
         # Step 13: check the millis_per_block range
         tx = self._make_update_millis_per_block_tx(self.min_millis_per_block - 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(
             f"update millis_per_block to {self.min_millis_per_block - 1} transaction sent: {tx_id}")
 
@@ -132,10 +129,8 @@ class MillisecondsPerBlock(Testing):
             execution, exception=f'MillisecondsPerBlock must be between [{self.min_millis_per_block}, {self.max_millis_per_block}]')
 
         tx = self._make_update_millis_per_block_tx(self.max_millis_per_block + 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
-        self.logger.info(
-            f"update millis_per_block to {self.max_millis_per_block + 1} transaction sent: {tx_id}")
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
+        self.logger.info(f"update millis_per_block to {self.max_millis_per_block + 1} transaction sent: {tx_id}")
 
         # Step 16: wait for the next block
         block_index = self.client.get_block_index()

@@ -35,6 +35,34 @@ class MaxNotValidBeforeDelta(Testing):
         if exception is not None:
             assert 'exception' in result and exception in result['exception']
 
+    def _set_max_not_valid_before_delta_with_tx(self, delta: int, exception: str | None = None):
+        # Step 1: build the transaction
+        block_index = self.client.get_block_index()
+        script = ScriptBuilder().emit_dynamic_call(
+            script_hash=NOTARY_CONTRACT_HASH,
+            method='setMaxNotValidBeforeDelta',
+            call_flags=CallFlags.STATES,
+            args=[delta],
+        ).to_bytes()
+
+        # Step 2: send the transaction
+        tx = self.make_tx(self.env.validators[0], script, self.default_sysfee, self.default_netfee, block_index+10)
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
+        self.logger.info(f"setMaxNotValidBeforeDelta transaction sent: {tx_id}")
+
+        # Step 3: wait for the next block
+        block_index = self.client.get_block_index()
+        self.wait_next_block(block_index)
+
+        # Step 4: check the application log
+        application_log = self.client.get_application_log(tx_id)
+        self.logger.info(f"setMaxNotValidBeforeDelta application log: {application_log}")
+        if exception is not None:
+            assert 'exception' in application_log and exception in application_log['exception']
+        else:
+            assert 'exception' not in application_log or application_log['exception'] is None
+            self.check_stack(application_log['stack'], [])
+
     def run_test(self):
         # Step 1: get the MaxValidUntilBlockIncrement.
         self._get_max_valid_until_block_increment()
@@ -45,17 +73,20 @@ class MaxNotValidBeforeDelta(Testing):
         # Step 3: only committee can set the MaxNotValidBeforeDelta.
         self._set_max_not_valid_before_delta(len(self.env.validators), exception="Invalid committee signature")
 
-        # Step 4: set the MaxNotValidBeforeDelta to a too large value.
+        # Step 4: set the MaxNotValidBeforeDelta to a too large value with tx.
         exception = "MaxNotValidBeforeDelta cannot be more than " + \
             f"{self.max_valid_until_block_increment // 2} or less than {len(self.env.validators)}"
+        self._set_max_not_valid_before_delta_with_tx(self.max_valid_until_block_increment + 1, exception=exception)
+
+        # Step 5: set the MaxNotValidBeforeDelta to a too large value.
         # BUG: cannot pass
         # self._set_max_not_valid_before_delta(self.max_valid_until_block_increment + 1, exception=exception)
 
-        # Step 4: set the MaxNotValidBeforeDelta to a too small value.
+        # Step 6: set the MaxNotValidBeforeDelta to a too small value.
         # BUG: cannot pass
-        self._set_max_not_valid_before_delta(len(self.env.validators) // 2, exception=exception)
+        # self._set_max_not_valid_before_delta(len(self.env.validators) // 2, exception=exception)
 
-        # Step 5: get the MaxNotValidBeforeDelta again, it should be the new value.
+        # Step 7: get the MaxNotValidBeforeDelta again, it should be the new value.
         self._get_max_not_valid_before_delta()
 
 

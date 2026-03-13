@@ -3,9 +3,10 @@
 
 echo "$(date) - Running tests..."
 groups=(
-    "basics"
+    "basics3"
     "crypto"
-    "governance"
+    "fee"
+    "governance3"
     "ledger"
     "notary"
     "policy"

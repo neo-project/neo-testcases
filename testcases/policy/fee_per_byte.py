@@ -59,8 +59,7 @@ class FeePerByte(Testing):
 
         # Step 5: send the transaction to the network
         tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_netfee, block_index+10)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"No permission update fee_per_byte transaction sent: {tx_id}")
 
         # Step 6: wait for the next block
@@ -80,8 +79,7 @@ class FeePerByte(Testing):
     def _check_committe_update_fee_per_byte(self, fee_per_byte: int):
         # Step 9: set the fee_per_byte to FEE_PER_BYTE_V2 by validators
         tx = self._make_update_fee_per_byte_tx(fee_per_byte)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"committee update fee_per_byte transaction sent: {tx_id}")
 
         # Step 10: wait for the next block
@@ -106,8 +104,7 @@ class FeePerByte(Testing):
     def _check_fee_per_byte_range(self):
         # Step 13: check the fee_per_byte  range
         tx = self._make_update_fee_per_byte_tx(self.min_fee_per_byte - 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"update fee_per_byte to {self.min_fee_per_byte - 1} transaction sent: {tx_id}")
 
         # Step 14: wait for the next block
@@ -126,8 +123,7 @@ class FeePerByte(Testing):
             execution, exception=f'FeePerByte must be between [{self.min_fee_per_byte}, {self.max_fee_per_byte}]')
 
         tx = self._make_update_fee_per_byte_tx(self.max_fee_per_byte + 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"update fee_per_byte to {self.max_fee_per_byte + 1} transaction sent: {tx_id}")
 
         # Step 16: wait for the next block

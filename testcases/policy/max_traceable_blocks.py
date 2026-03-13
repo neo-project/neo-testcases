@@ -64,8 +64,7 @@ class MaxTraceableBlocks(Testing):
 
         # Step 5: send the transaction to the network
         tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_netfee, block_index+10)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"No permission update max_traceable_blocks transaction sent: {tx_id}")
 
         # Step 6: wait for the next block
@@ -85,8 +84,7 @@ class MaxTraceableBlocks(Testing):
     def _check_max_traceable_blocks_range(self):
         # Step 8: check the max_traceable_blocks range
         tx = self._make_update_max_traceable_blocks_tx(self.min_max_traceable_blocks - 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(
             f"update max_traceable_blocks to {self.min_max_traceable_blocks - 1} transaction sent: {tx_id}")
 
@@ -107,8 +105,7 @@ class MaxTraceableBlocks(Testing):
             execution, exception=f'MaxTraceableBlocks must be between [{self.min_max_traceable_blocks}, {self.max_max_traceable_blocks}]')
 
         tx = self._make_update_max_traceable_blocks_tx(self.max_max_traceable_blocks + 1)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(
             f"update max_traceable_blocks to {self.max_max_traceable_blocks + 1} transaction sent: {tx_id}")
 
@@ -133,8 +130,7 @@ class MaxTraceableBlocks(Testing):
         # Try to increase max_traceable_blocks - this should fail
         increased_value = self.updated_max_traceable_blocks + 1
         tx = self._make_update_max_traceable_blocks_tx(increased_value)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"update max_traceable_blocks to {increased_value} (increase) transaction sent: {tx_id}")
 
         # Step 14: wait for the next block
@@ -162,8 +158,7 @@ class MaxTraceableBlocks(Testing):
         # Try to set max_traceable_blocks to a value less than MaxValidUntilBlockIncrement
         invalid_value = max_valid_until_block_increment - 1
         tx = self._make_update_max_traceable_blocks_tx(invalid_value)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(
             f"update max_traceable_blocks to {invalid_value} (less than MaxValidUntilBlockIncrement) transaction sent: {tx_id}")
 
@@ -186,8 +181,7 @@ class MaxTraceableBlocks(Testing):
     def _check_committee_update_max_traceable_blocks(self, max_traceable_blocks: int):
         # Step 19: set the max_traceable_blocks to UPDATED_MAX_TRACEABLE_BLOCKS by validators
         tx = self._make_update_max_traceable_blocks_tx(max_traceable_blocks)
-        tx_hash = self.client.send_raw_tx(tx.to_array())
-        tx_id = tx_hash['hash']
+        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"committee update max_traceable_blocks transaction sent: {tx_id}")
 
         # Step 20: wait for the next block
