@@ -104,4 +104,4 @@ class DesignateRole(Testing):
 
 if __name__ == "__main__":
     test = DesignateRole()
-    test.run_test()
+    test.run()

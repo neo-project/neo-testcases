@@ -29,4 +29,4 @@ class ExecPicoFeeFactor(Testing):
 
 if __name__ == "__main__":
     test = ExecPicoFeeFactor()
-    test.run_test()
+    test.run()
