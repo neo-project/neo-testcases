@@ -3,9 +3,9 @@ from neo.contract import *
 from testcases.testing import Testing
 
 
-class DepositN3(Testing):
+class NotaryDepositN3(Testing):
     def __init__(self):
-        super().__init__("DepositN3")
+        super().__init__("NotaryDepositN3")
         self.neo3_only = True  # NEO4 has different GAS contract.
         self.default_sysfee = 2_0000000  # 0.2 GAS
         self.default_netfee = 2_0000000  # 0.2 GAS
@@ -119,5 +119,5 @@ class DepositN3(Testing):
 
 # Run with: python3 -B -m testcases.notary.deposit_n3
 if __name__ == "__main__":
-    test = DepositN3()
+    test = NotaryDepositN3()
     test.run()

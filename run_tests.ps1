@@ -3,17 +3,18 @@
 
 Write-Host "$(Get-Date) - Running tests..."
 $groups = @(
-    "basics3"
-    "crypto"
-    "fee"
-    "governance3"
-    "ledger"
-    "notary"
-    "policy"
-    "rolemanagement"
-    "stdlib"
-    "system/fee"
-    "plugins/rpcserver"
+    "basics3"            # N3
+    "contractmanagement" # N3 & N4
+    "crypto"             # N3 & N4
+    "governance3"        # N3
+    "ledger"             # N3 & N4
+    "notary"             # N3 & N4
+    "oracle"             # N3 & N4
+    "policy"             # N3 & N4
+    "rolemanagement"     # N3 & N4
+    "stdlib"             # N3 & N4
+    "system/fee"         # N3 & N4
+    "plugins/rpcserver"  # N3 & N4
 )
 
 $selected = $groups
