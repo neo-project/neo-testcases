@@ -8,7 +8,8 @@ from neo3.core.utils import to_script_hash
 from neo3.network.payloads.transaction import Transaction, OracleResponse, OracleResponseCode
 from neo3.network.payloads.verification import Signer, Witness, WitnessScope
 from neo3.wallet.account import Account
-from neo3.vm import OpCode
+
+from neo.opcode import OpCode
 
 
 class Hardforks:

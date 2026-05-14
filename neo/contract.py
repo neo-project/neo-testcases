@@ -3,7 +3,7 @@ import hashlib
 from typing import Self
 from dataclasses import asdict, dataclass
 
-from neo import UInt160, CallFlags
+from neo import UInt160, CallFlags, OpCode
 
 NEO_CONTRACT_HASH = '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5'
 GAS_CONTRACT_HASH = '0xd2a4cff31913016155e38e474a2c06d08be276cf'
@@ -53,7 +53,9 @@ class ScriptBuilder:
     def __init__(self):
         self._script = bytearray()
 
-    def emit(self, opcode: int, operand: bytes = b'') -> Self:
+    def emit(self, opcode: int | OpCode, operand: bytes = b'') -> Self:
+        if isinstance(opcode, OpCode):
+            opcode = opcode.value
         if opcode < 0 or opcode > 0xFF:
             raise ValueError(f"Invalid opcode: {opcode}")
 

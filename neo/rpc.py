@@ -78,7 +78,10 @@ class RpcClient:
         return self.send("invokefunction",
                           [script_hash, method, [x if isinstance(x, dict) else x.to_dict() for x in args]])
 
-    def send_raw_tx(self, raw_tx: bytes):
+    def invoke_script(self, script: bytes, signers: list[dict] = []) -> dict:
+        return self.send("invokescript", [base64.b64encode(script).decode('utf-8'), signers, True])
+
+    def send_raw_tx(self, raw_tx: bytes) -> dict:
         return self.send("sendrawtransaction", [base64.b64encode(raw_tx).decode('utf-8')])
 
     def get_mempool(self, include_unverified: bool = False) -> dict:
