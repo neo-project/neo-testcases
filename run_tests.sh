@@ -23,7 +23,7 @@ skip_initial=false
 while [[ $# -gt 0 ]]; do
   case $1 in
     --groups)
-      selected=($2)
+      IFS=',' read -r -a selected <<< "$2"
       shift 2
       ;;
     --skip-initial)
