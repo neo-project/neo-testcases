@@ -14,6 +14,7 @@ $groups = @(
     "rolemanagement"     # N3 & N4
     "stdlib"             # N3 & N4
     "system/fee"         # N3 & N4
+    "system/opcode"      # N3 & N4
     "plugins/rpcserver"  # N3 & N4
 )
 
