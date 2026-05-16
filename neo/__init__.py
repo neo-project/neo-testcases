@@ -29,5 +29,8 @@ class NamedCurveHash:
     SECP256R1_KECCAK256 = 123
 
 
-def make_oracle_response(response: bytes) -> OracleResponse:
-    return OracleResponse(id=1, code=OracleResponseCode.SUCCESS, result=response)
+def make_oracle_response(
+        response: bytes,
+        request_id: int = 1,
+        code: OracleResponseCode = OracleResponseCode.SUCCESS) -> OracleResponse:
+    return OracleResponse(id=request_id, code=code, result=response)
