@@ -20,12 +20,17 @@ class DesignateRole(Testing):
     def __init__(self):
         super().__init__("DesignateRole")
 
-    def _get_designated_by_role(self, role: int, block_index: int, expected: list = []):
+    def _get_designated_by_role(self, role: int, block_index: int, expected: list | None = None):
         result = self.client.invoke_function(ROLE_MANAGEMENT_CONTRACT_HASH, "getDesignatedByRole",
                                              [ContractParameter(type="Integer", value=role),
                                               ContractParameter(type="Integer", value=block_index)])
         self.logger.info(f"getDesignatedByRole result: {result}")
-        self.check_stack(result['stack'], expected)
+        if expected is None:
+            assert 'exception' not in result or result['exception'] is None
+            assert len(result['stack']) == 1 and result['stack'][0]['type'] == 'Array'
+        else:
+            self.check_stack(result['stack'], expected)
+        return result['stack'][0]['value']
 
     def _get_role_with_invalid_role(self, block_index: int):
         role = 255  # invalid role
@@ -123,10 +128,10 @@ class DesignateRole(Testing):
     def run_test(self):
         # Step 1: get the designated roles
         block_index = self.client.get_block_index()
-        self._get_designated_by_role(ROLE_STATE_VALIDATOR, block_index, [('Array', [])])
-        self._get_designated_by_role(ROLE_ORACLE, block_index, [('Array', [])])
-        self._get_designated_by_role(ROLE_NEOFS_ALPHABET_NODE, block_index, [('Array', [])])
-        self._get_designated_by_role(ROLE_P2P_NOTARY, block_index, [('Array', [])])
+        self._get_designated_by_role(ROLE_STATE_VALIDATOR, block_index)
+        self._get_designated_by_role(ROLE_ORACLE, block_index)
+        self._get_designated_by_role(ROLE_NEOFS_ALPHABET_NODE, block_index)
+        self._get_designated_by_role(ROLE_P2P_NOTARY, block_index)
 
         # Step 2: check get role with invalid role
         self._get_role_with_invalid_role(block_index)
