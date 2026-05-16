@@ -45,10 +45,19 @@ class Base64UrlEncode(StdLibTesting):
         self.logger.info(f"Invoke 'base64UrlEncode' with normal data result: {result}")
         assert 'exception' not in result or result['exception'] is None
 
-        # encoded-twice, because the return value has another encoding
-        expected = base64.b64encode(base64.urlsafe_b64encode(b'0123456789abcdef')).decode('utf-8')
+        encoded = base64.urlsafe_b64encode(source.encode('utf-8')).rstrip(b'=')
+        expected = base64.b64encode(encoded).decode('utf-8')
         assert result['stack'][0]['type'] == 'ByteString'
         assert result['stack'][0]['value'] == expected, f"Expected {expected}, got {result['stack'][0]['value']}"
+
+        # Step 2: check base64UrlDecode with normal data
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base64UrlDecode",
+                                             [{'type': 'String', 'value': encoded.decode('utf-8')}])
+        self.logger.info(f"Invoke 'base64UrlDecode' with normal data result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+
+        expected = base64.b64encode(source.encode('utf-8')).decode('utf-8')
+        self.check_stack(result['stack'], [('ByteString', expected)])
 
     def run_test(self):
         # Step 1: Check base64UrlEncode and base64UrlDecode with null
@@ -61,7 +70,7 @@ class Base64UrlEncode(StdLibTesting):
         self.check_size_limit("base64UrlEncode", pramater_type='ByteArray')
 
         # Step 4: Check normal cases
-        # self._check_encode_normal_cases() # TODO: fix this
+        self._check_encode_normal_cases()
 
 
 # Run with: python3 -B -m testcases.stdlib.base64url_encode
