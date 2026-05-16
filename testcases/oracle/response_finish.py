@@ -61,11 +61,12 @@ class OracleResponseFinish(Testing):
         sign = self.sign(self.env.validators[0].private_key, raw_tx)
         tx.witnesses = [self.make_witness(sign, self.env.validators[0].public_key)]
         try:
-            tx_id = self.client.send_raw_tx(tx.to_array())['hash']
-            self.logger.info(f"finish transaction sent: {tx_id}")
+            self.client.send_raw_tx(tx.to_array())
         except Exception as ex:
             self.logger.info(f"finish transaction failed: {ex}")
-            'InvalidAttribute' in str(ex)
+            assert 'InvalidAttribute' in str(ex) or 'Invalid attribute' in str(ex)
+            return
+        raise AssertionError("Expected invalid OracleResponse transaction to be rejected")
 
     def run_test(self):
         # Step 1: check the Invocation_counter
