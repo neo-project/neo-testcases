@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getTx method in Ledger contract.
@@ -11,7 +11,7 @@ from testcases.testing import Testing
 #  2. If the txHash is not found or (current-height - the block height of the tx) > max-traceable-blocks, it will return null.
 #  3. If the txHash is found, it will return the tx.
 # Expect Result: The getTx method is working as expected.
-class GetTx(Testing):
+class GetTx(LedgerTesting):
     def __init__(self):
         super().__init__("GetTx")
 
@@ -19,7 +19,7 @@ class GetTx(Testing):
         # Step 1: check argument null
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransaction", [{'type': 'ByteArray'}])
         self.logger.info(f"GetTx with null argument result: {result}")
-        assert 'exception' in result and 'Object reference not set to an instance of an object' in result['exception']
+        self._check_null_argument_exception(result)
 
     def _check_tx_hash_too_long(self):
         # Step 1: check tx hash too long
@@ -39,12 +39,18 @@ class GetTx(Testing):
         assert result['stack'][0]['type'] == 'Any'
         assert 'value' not in result['stack'][0] or result['stack'][0]['value'] is None
 
+    def _check_normal_cases(self):
+        marker = self._send_marker_tx()
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransaction",
+                                             [ContractParameter(type="Hash256", value=marker["tx_id"])])
+        self.logger.info(f"GetTx with existing tx result: {result}")
+        self._check_tx_stack(result, marker)
+
     def run_test(self):
         self._check_argument_null()
         self._check_tx_hash_too_long()
         self._check_tx_not_found()
-
-        # TODO: check normal cases
+        self._check_normal_cases()
 
 
 # Run with: python3 -B -m testcases.ledger.get_tx
