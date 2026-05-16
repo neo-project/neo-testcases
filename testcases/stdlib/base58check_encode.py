@@ -1,4 +1,7 @@
 
+import base64
+import base58
+
 from neo.contract import STDLIB_CONTRACT_HASH
 from testcases.stdlib.base import StdLibTesting
 
@@ -31,6 +34,25 @@ class Base58CheckEncode(StdLibTesting):
         self.logger.info(f"Invoke 'base58CheckDecode' with invalid base58Check encoded string result: {result}")
         assert 'exception' in result and 'Invalid Base58' in result['exception']
 
+    def _check_normal_cases(self):
+        source_bytes = b'0123456789abcdef'
+        source = base64.b64encode(source_bytes).decode('utf-8')
+
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base58CheckEncode",
+                                             [{'type': 'ByteArray', 'value': source}])
+        self.logger.info(f"Invoke 'base58CheckEncode' with normal data result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+
+        encoded = base58.b58encode_check(source_bytes).decode('utf-8')
+        expected = base64.b64encode(encoded.encode('utf-8')).decode('utf-8')
+        self.check_stack(result['stack'], [('ByteString', expected)])
+
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base58CheckDecode",
+                                             [{'type': 'String', 'value': encoded}])
+        self.logger.info(f"Invoke 'base58CheckDecode' with normal data result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        self.check_stack(result['stack'], [('ByteString', source)])
+
     def run_test(self):
         # Step 1: Check base58CheckEncode and base58CheckDecode with null
         self._check_argument_null()
@@ -41,7 +63,8 @@ class Base58CheckEncode(StdLibTesting):
         # Step 3: Check length limit
         self.check_size_limit("base58Encode", pramater_type='ByteArray')
 
-        # TODO: check normal cases
+        # Step 4: Check normal cases
+        self._check_normal_cases()
 
 
 # Run with: python3 -B -m testcases.stdlib.base58check_encode
