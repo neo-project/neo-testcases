@@ -89,4 +89,4 @@ class Ripemd160Testing(Testing):
 # Run with: python3 -B -m testcases.crypto.ripemd160
 if __name__ == "__main__":
     testing = Ripemd160Testing()
-    testing.run_test()
+    testing.run()

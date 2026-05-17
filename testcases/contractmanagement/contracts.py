@@ -88,4 +88,4 @@ class Contracts(Testing):
 # Run with: python3 -B -m testcases.contractmanagement.contracts
 if __name__ == "__main__":
     contracts = Contracts()
-    contracts.run_test()
+    contracts.run()
