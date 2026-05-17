@@ -21,14 +21,21 @@ class Contracts(Testing):
         hash = bytes.fromhex(hash)[::-1]  # reverse the hash and then encode to base64
         return base64.b64encode(hash).decode('utf-8')
 
-    def _check_contract_state(self, result: dict, contract_hash: str | None, contract_id: int | None):
+    def _check_contract_state(
+            self, result: dict, contract_hash: str | None, contract_id: int | None, update_counter: int = 0):
+        assert 'exception' not in result or result['exception'] is None, f"Expected no exception, got {result}"
         stack = result['stack']
         if contract_id is not None and contract_hash is not None:
             assert len(stack) == 1 and stack[0]['type'] == 'Array', f"Expected Array, got {stack[0]['type']}"
             value = stack[0]['value']
             assert len(value) == 5, f"Expected 5 item in value, got {len(value)}"
-            self.check_stack(value[:3],
-                             [('Integer', str(contract_id)), ('Integer', str(1)), ('ByteString', contract_hash)])
+            self.check_stack(value[:3], [
+                ('Integer', str(contract_id)),
+                ('Integer', str(update_counter)),
+                ('ByteString', contract_hash),
+            ])
+            assert value[3]['type'] == 'ByteString', f"Expected NEF ByteString, got {value[3]['type']}"
+            assert value[4]['type'] in ('Array', 'Struct'), f"Expected manifest Array/Struct, got {value[4]['type']}"
         else:
             assert len(stack) == 1, f"Expected 1 item in stack, got {len(stack)}"
             assert stack[0]['type'] == 'Any', f"Expected Any, got {stack[0]['type']}"
