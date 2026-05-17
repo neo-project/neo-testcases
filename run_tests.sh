@@ -47,6 +47,15 @@ for group in ${selected[@]}; do
 done
 
 failures=()
+echo "$(date) - Running environment config tests..."
+python3 -B -m testcases.env_config
+if [ $? -ne 0 ]; then
+    echo "$(date) - Failed to run environment config tests"
+    failures+=("env_config")
+else
+    echo "$(date) - Passed environment config tests"
+fi
+
 if [ "$skip_initial" = false ]; then
     echo "$(date) - Running initial tests..."
     python3 -B -m testcases.initial
