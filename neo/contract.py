@@ -1,9 +1,10 @@
 
+import base64
 import hashlib
 from typing import Self
 from dataclasses import asdict, dataclass
 
-from neo import UInt160, CallFlags, OpCode
+from neo import UInt160, UInt256, CallFlags, OpCode
 
 NEO_CONTRACT_HASH = '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5'
 GAS_CONTRACT_HASH = '0xd2a4cff31913016155e38e474a2c06d08be276cf'
@@ -105,8 +106,81 @@ class ScriptBuilder:
         self._script.extend(item)
         return self
 
-    def emit_push(self, item: any) -> Self:
+    def _decode_contract_bytes(self, item: any) -> bytes:
         if item is None:
+            raise ValueError("ContractParameter value can't be null")
+        if isinstance(item, bytes) or isinstance(item, bytearray):
+            return bytes(item)
+        if isinstance(item, str):
+            if item.startswith('0x'):
+                return bytes.fromhex(item[2:])
+            return base64.b64decode(item)
+        raise ValueError(f"Unsupported ContractParameter bytes type: {type(item)}")
+
+    def _contract_hash_to_bytes(self, item: any, expected_type: type[UInt160] | type[UInt256]) -> bytes:
+        if item is None:
+            raise ValueError("ContractParameter value can't be null")
+        if isinstance(item, expected_type):
+            return item.to_array()
+        if isinstance(item, str):
+            return expected_type.from_string(item).to_array()
+        if hasattr(item, 'to_array'):
+            item = item.to_array()
+        if not isinstance(item, bytes):
+            raise ValueError(f"Unsupported hash value type: {type(item)}")
+        expected_size = 20 if expected_type is UInt160 else 32
+        if len(item) != expected_size:
+            raise ValueError(f"Expected {expected_size} hash bytes, got {len(item)}")
+        return item
+
+    def _public_key_to_bytes(self, item: any) -> bytes:
+        if item is None:
+            raise ValueError("ContractParameter value can't be null")
+        if isinstance(item, bytes) or isinstance(item, bytearray):
+            return bytes(item)
+        if isinstance(item, str):
+            return bytes.fromhex(item[2:] if item.startswith('0x') else item)
+        if hasattr(item, 'encode_point'):
+            return item.encode_point(True)
+        raise ValueError(f"Unsupported public key value type: {type(item)}")
+
+    def emit_push_contract_parameter(self, item: ContractParameter) -> Self:
+        parameter_type = item.type.lower()
+        if item.value is None:
+            return self.emit_push(None)
+
+        if parameter_type == 'any':
+            return self.emit_push(item.value)
+        if parameter_type == 'void':
+            return self.emit_push(None)
+        if parameter_type == 'boolean':
+            value = item.value
+            if isinstance(value, str):
+                value = value.lower() == 'true'
+            return self.emit_push(bool(value))
+        if parameter_type == 'integer':
+            return self.emit_push_int(int(item.value))
+        if parameter_type == 'string':
+            return self.emit_push(str(item.value))
+        if parameter_type in ('bytearray', 'signature'):
+            return self.emit_push_bytes(self._decode_contract_bytes(item.value))
+        if parameter_type == 'hash160':
+            return self.emit_push_bytes(self._contract_hash_to_bytes(item.value, UInt160))
+        if parameter_type == 'hash256':
+            return self.emit_push_bytes(self._contract_hash_to_bytes(item.value, UInt256))
+        if parameter_type == 'publickey':
+            return self.emit_push_bytes(self._public_key_to_bytes(item.value))
+        if parameter_type == 'array':
+            if not isinstance(item.value, list) and not isinstance(item.value, tuple):
+                raise ValueError(f"Array ContractParameter requires a list or tuple, got {type(item.value)}")
+            return self.emit_push_array(item.value)
+
+        raise ValueError(f"Unsupported ContractParameter type: {item.type}")
+
+    def emit_push(self, item: any) -> Self:
+        if isinstance(item, ContractParameter):
+            self.emit_push_contract_parameter(item)
+        elif item is None:
             self.emit(0x0B)  # PUSHNULL
         elif isinstance(item, bool):
             self.emit(0x08 if item else 0x09)  # PUSHT, PUSHF
@@ -123,7 +197,7 @@ class ScriptBuilder:
             if not isinstance(item, bytes):
                 raise ValueError(f"Unsupported item type: {type(item)}")
             self.emit_push_bytes(item)
-        else:  # TODO: ContractParameter
+        else:
             raise ValueError(f"Unsupported item type: {type(item)}")
         return self
 
