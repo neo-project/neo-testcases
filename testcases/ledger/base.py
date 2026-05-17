@@ -26,10 +26,18 @@ class LedgerTesting(Testing):
 
         tx_id = self.client.send_raw_tx(tx.to_array())["hash"]
         self.logger.info(f"Ledger marker transaction sent: {tx_id}")
-        self.wait_next_block(start_index, wait_while=f"waiting for marker tx {tx_id}")
 
-        current_index = self.client.get_block_index()
-        block_index, tx_index, block_hash = self._find_tx_in_blocks(tx_id, start_index + 1, current_index)
+        search_start = start_index + 1
+        while True:
+            current_index = self.wait_next_block(start_index, wait_while=f"waiting for marker tx {tx_id}")
+            try:
+                block_index, tx_index, block_hash = self._find_tx_in_blocks(tx_id, search_start, current_index)
+                break
+            except AssertionError:
+                if current_index >= valid_until_block:
+                    raise
+                start_index = current_index
+                search_start = current_index + 1
 
         application_log = self.client.get_application_log(tx_id)
         self.logger.info(f"Ledger marker application log: {application_log}")
