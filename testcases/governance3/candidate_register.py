@@ -25,8 +25,13 @@ class CandidateRegister(Testing):
         self.logger.info(f"GetRegisterPrice result: {result}")
         self.register_price = int(result['stack'][0]['value'])
 
-    def _check_register_notification(self, public_key: bytes, notification: list[dict]):
-        assert len(notification) == 1
+    def _check_register_notification(self, public_key: bytes, notification: dict):
+        assert 'contract' in notification and notification['contract'] == NEO_CONTRACT_HASH
+        assert 'eventname' in notification and notification['eventname'] == 'CandidateStateChanged'
+        assert 'state' in notification and notification['state']['type'] == 'Array'
+
+        notification = notification['state']['value']
+        assert len(notification) == 3
 
         # notification[0] is base64 encoded public key
         assert 'type' in notification[0] and notification[0]['type'] == 'ByteString'
@@ -38,7 +43,7 @@ class CandidateRegister(Testing):
 
         # notification[2] is Vote count. 0 because no vote yet.
         assert 'type' in notification[2] and notification[2]['type'] == 'Integer'
-        assert 'value' in notification[2] and notification[2]['value'] == 0
+        assert 'value' in notification[2] and notification[2]['value'] == '0'
 
     def _register_with_null(self):
         block_index = self.client.get_block_index()
@@ -122,6 +127,12 @@ class CandidateRegister(Testing):
         # Step 6: check the success of the registration. Not OK if register with another public key.
         success = True if another_public_key is None else False
         self.check_stack(execution['stack'], [('Boolean', success)])
+        if success:
+            assert 'notifications' in execution and len(execution['notifications']) == 1
+            self._check_register_notification(public_key, execution['notifications'][0])
+            assert self._get_candidate_votes(public_key) == 0
+        else:
+            assert 'notifications' not in execution or len(execution['notifications']) == 0
 
     def run_test(self):
         # Step 1: get the register price
