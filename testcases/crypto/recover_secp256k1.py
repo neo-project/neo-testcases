@@ -214,4 +214,4 @@ class RecoverSecp256k1(Testing):
 # Run with: python3 -B -m testcases.crypto.recover_secp256k1
 if __name__ == "__main__":
     testing = RecoverSecp256k1()
-    testing.run_test()
+    testing.run()
