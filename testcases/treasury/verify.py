@@ -25,7 +25,7 @@ class TreasuryVerify(Testing):
         return ScriptBuilder().emit_dynamic_call(
             script_hash=TREASURY_CONTRACT_HASH,
             method="verify",
-            call_flags=CallFlags.NONE,
+            call_flags=CallFlags.READ_STATES,
             args=[],
         ).to_bytes()
 
