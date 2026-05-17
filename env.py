@@ -55,7 +55,8 @@ class Env:
             "network": self.network,
             "hardforks": asdict(self.hardforks),
             "validators": ['0x' + v.private_key[::-1].to_hex() for v in self.validators],
-            "others": ['0x' + o.private_key[::-1].to_hex() for o in self.others]
+            "others": ['0x' + o.private_key[::-1].to_hex() for o in self.others],
+            "neo4_enable": self.neo4_enable
         }
 
     @classmethod
@@ -71,5 +72,6 @@ class Env:
             network=data['network'],
             hardforks=data['hardforks'] if isinstance(data['hardforks'], Hardfork) else Hardfork(**data['hardforks']),
             validators=[Account(private_key=int(v, 16).to_bytes(32, 'big')) for v in data['validators']],
-            others=[Account(private_key=int(o, 16).to_bytes(32, 'big')) for o in data['others']]
+            others=[Account(private_key=int(o, 16).to_bytes(32, 'big')) for o in data['others']],
+            neo4_enable=data.get('neo4_enable', False)
         )

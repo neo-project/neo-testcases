@@ -51,6 +51,15 @@ foreach ($group in $selected) {
 }
 
 $failures = @()
+Write-Host "$(Get-Date) - Running environment config tests..."
+python3 -B -m testcases.env_config
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "$(Get-Date) - Failed to run environment config tests"
+    $failures += "env_config"
+} else {
+    Write-Host "$(Get-Date) - Passed environment config tests"
+}
+
 if (-not $skip_initial) {
     Write-Host "$(Get-Date) - Running initial tests..."
     python3 -B -m testcases.initial
