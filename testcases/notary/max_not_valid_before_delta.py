@@ -57,11 +57,11 @@ class MaxNotValidBeforeDelta(Testing):
         # Step 4: check the application log
         application_log = self.client.get_application_log(tx_id)
         self.logger.info(f"setMaxNotValidBeforeDelta application log: {application_log}")
+        execution = application_log['executions'][0]
         if exception is not None:
-            assert 'exception' in application_log and exception in application_log['exception']
+            self.check_execution_result(execution, exception=exception)
         else:
-            assert 'exception' not in application_log or application_log['exception'] is None
-            self.check_stack(application_log['stack'], [])
+            self.check_execution_result(execution)
 
     def run_test(self):
         # Step 1: get the MaxValidUntilBlockIncrement.
@@ -79,12 +79,10 @@ class MaxNotValidBeforeDelta(Testing):
         self._set_max_not_valid_before_delta_with_tx(self.max_valid_until_block_increment + 1, exception=exception)
 
         # Step 5: set the MaxNotValidBeforeDelta to a too large value.
-        # BUG: cannot pass
-        # self._set_max_not_valid_before_delta(self.max_valid_until_block_increment + 1, exception=exception)
+        self._set_max_not_valid_before_delta(self.max_valid_until_block_increment + 1, exception=exception)
 
         # Step 6: set the MaxNotValidBeforeDelta to a too small value.
-        # BUG: cannot pass
-        # self._set_max_not_valid_before_delta(len(self.env.validators) // 2, exception=exception)
+        self._set_max_not_valid_before_delta(len(self.env.validators) // 2, exception=exception)
 
         # Step 7: get the MaxNotValidBeforeDelta again, it should be the new value.
         self._get_max_not_valid_before_delta()
