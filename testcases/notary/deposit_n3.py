@@ -1,4 +1,6 @@
 
+import base64
+
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -24,17 +26,32 @@ class NotaryDepositN3(Testing):
         assert 'exception' not in result or result['exception'] is None, f"Expected no exception, got {result}"
         return int(result['stack'][0]['value'])
 
+    def _check_gas_transfer_notification(self, notification: dict, source: UInt160, dest: UInt160, amount: int):
+        assert 'contract' in notification and notification['contract'] == GAS_CONTRACT_HASH
+        assert 'eventname' in notification and notification['eventname'] == 'Transfer'
+        assert 'state' in notification and notification['state']['type'] == 'Array'
+
+        state = notification['state']['value']
+        assert len(state) == 3
+        assert state[0]['type'] == 'ByteString'
+        assert state[0]['value'] == base64.b64encode(source.to_array()).decode('utf-8')
+        assert state[1]['type'] == 'ByteString'
+        assert state[1]['value'] == base64.b64encode(dest.to_array()).decode('utf-8')
+        assert state[2]['type'] == 'Integer'
+        assert state[2]['value'] == str(amount)
+
     def _deposit(self, account: UInt160, amount: int, exception: str | None = None) -> int:
         # Step 1: build the deposit script
         dest160 = UInt160.from_string(NOTARY_CONTRACT_HASH)
         block_index = self.client.get_block_index()
+        expiration = block_index + 5
         script = ScriptBuilder().emit_dynamic_call(
             script_hash=GAS_CONTRACT_HASH,
             method='transfer',
             call_flags=(CallFlags.STATES | CallFlags.ALLOW_CALL | CallFlags.ALLOW_NOTIFY),
-            args=[account, dest160, amount, [None, block_index + 5]],
+            args=[account, dest160, amount, [None, expiration]],
         ).to_bytes()
-        tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_netfee, block_index+5)
+        tx = self.make_tx(self.env.others[0], script, self.default_sysfee, self.default_netfee, expiration)
 
         # Step 2: send the transaction
         tx_id = self.client.send_raw_tx(tx.to_array())['hash']
@@ -53,8 +70,9 @@ class NotaryDepositN3(Testing):
         else:
             assert 'exception' not in execution or execution['exception'] is None
             self.check_execution_result(execution, stack=[('Boolean', True)])
-            # TODO: check the notifications
-        return block_index + 5  # The expiration block index
+            assert 'notifications' in execution and len(execution['notifications']) == 1
+            self._check_gas_transfer_notification(execution['notifications'][0], account, dest160, amount)
+        return expiration
 
     def _withdraw(self, account: UInt160, expected: bool):
         # Step 1: build the withdraw script
