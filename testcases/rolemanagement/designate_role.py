@@ -1,4 +1,6 @@
 
+import base64
+
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -75,6 +77,46 @@ class DesignateRole(Testing):
         self.logger.info(f"designateAsRole result: {result}")
         assert 'exception' in result and 'Invalid committee signature' in result['exception']
 
+    def _set_role_by_committee(self, role: int, nodes: list):
+        block_index = self.client.get_block_index()
+        script = ScriptBuilder().emit_dynamic_call(
+            script_hash=ROLE_MANAGEMENT_CONTRACT_HASH,
+            method='designateAsRole',
+            call_flags=(CallFlags.STATES | CallFlags.ALLOW_NOTIFY),
+            args=[role, nodes],
+        ).to_bytes()
+        tx = self.make_multisig_tx(script, self.default_sysfee, self.default_netfee, block_index + 10, is_committee=True)
+        tx_hash = self.client.send_raw_tx(tx.to_array())
+        tx_id = tx_hash['hash']
+        self.logger.info(f"designateAsRole transaction sent: {tx_id}")
+
+        block_index = self.client.get_block_index()
+        self.wait_next_block(block_index, wait_while=f"persisting role designation tx {tx_id}")
+
+        application_log = self.client.get_application_log(tx_id)
+        self.logger.info(f"designateAsRole application log: {application_log}")
+        assert 'txid' in application_log and tx_id == application_log['txid']
+        assert 'executions' in application_log and len(application_log['executions']) == 1
+        self.check_execution_result(application_log['executions'][0], stack=[])
+
+    def _set_role_with_valid_nodes(self):
+        role = ROLE_NEOFS_ALPHABET_NODE
+        nodes = [self.env.validators[0].public_key]
+        self._set_role_by_committee(role, nodes)
+
+        query_index = self.client.get_block_index() + 1
+        result = self.client.invoke_function(ROLE_MANAGEMENT_CONTRACT_HASH, "getDesignatedByRole",
+                                             [ContractParameter(type="Integer", value=role),
+                                              ContractParameter(type="Integer", value=query_index)])
+        self.logger.info(f"getDesignatedByRole result after designateAsRole: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        assert len(result['stack']) == 1 and result['stack'][0]['type'] == 'Array'
+        designated_nodes = result['stack'][0]['value']
+        assert len(designated_nodes) == 1, f"Expected 1 designated node, got {len(designated_nodes)}"
+        assert designated_nodes[0]['type'] == 'ByteString'
+        expected = base64.b64encode(nodes[0].to_array()).decode('utf-8')
+        assert designated_nodes[0]['value'] == expected, f"Unexpected designated node: {designated_nodes[0]['value']}"
+
     def run_test(self):
         # Step 1: get the designated roles
         block_index = self.client.get_block_index()
@@ -99,7 +141,7 @@ class DesignateRole(Testing):
         self._set_role_with_not_committee(block_index)
 
         # Step 7: check set role with valid nodes
-        # TODO: add test case
+        self._set_role_with_valid_nodes()
 
 
 if __name__ == "__main__":
