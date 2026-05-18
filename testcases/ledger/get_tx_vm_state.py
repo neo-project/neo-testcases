@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getTxVmState method in Ledger contract.
@@ -11,7 +11,7 @@ from testcases.testing import Testing
 #  2. If the txHash is not found, it will return VmState.NONE.
 #  3. If the txHash is found, it will return the VM state of the tx.
 # Expect Result: The getTxVmState method is working as expected.
-class GetTxVmState(Testing):
+class GetTxVmState(LedgerTesting):
     def __init__(self):
         super().__init__("GetTxVmState")
 
@@ -29,11 +29,17 @@ class GetTxVmState(Testing):
         self.logger.info(f"GetTxVmState with tx not found result: {result}")
         assert result['stack'][0]['type'] == 'Integer' and result['stack'][0]['value'] == '0'
 
+    def _check_normal_case(self):
+        context = self.submit_confirmed_tx()
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionVMState",
+                                             [self._encode_uint256_param(context['tx_id'])])
+        self.logger.info(f"GetTxVmState with valid tx hash result: {result}")
+        self.check_stack(result['stack'], [('Integer', '1')])  # HALT
+
     def run_test(self):
         self._check_argument_null()
         self._check_tx_not_found()
-
-        # TODO: check normal cases
+        self._check_normal_case()
 
 
 # Run with: python3 -B -m testcases.ledger.get_tx_vm_state

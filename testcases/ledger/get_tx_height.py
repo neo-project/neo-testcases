@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getTxHeight method in Ledger contract.
@@ -11,7 +11,7 @@ from testcases.testing import Testing
 #  2. If the txHash is not found or (current-height - the block height of the tx) > max-traceable-blocks, it will return -1.
 #  3. If the txHash is found, it will return the block height of the tx.
 # Expect Result: The getTxHeight method is working as expected.
-class GetTxHeight(Testing):
+class GetTxHeight(LedgerTesting):
     def __init__(self):
         super().__init__("GetTxHeight")
 
@@ -29,11 +29,17 @@ class GetTxHeight(Testing):
         self.logger.info(f"GetTxHeight with tx hash too long result: {result}")
         assert 'exception' in result and 'Invalid UInt256 length' in result['exception']
 
+    def _check_normal_case(self):
+        context = self.submit_confirmed_tx()
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionHeight",
+                                             [self._encode_uint256_param(context['tx_id'])])
+        self.logger.info(f"GetTxHeight with valid tx hash result: {result}")
+        self.check_stack(result['stack'], [('Integer', str(context['block_index']))])
+
     def run_test(self):
         self._check_argument_null()
         self._check_tx_hash_too_long()
-
-        # TODO: check normal cases
+        self._check_normal_case()
 
 
 # Run with: python3 -B -m testcases.ledger.get_tx_height

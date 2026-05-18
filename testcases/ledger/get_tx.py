@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getTx method in Ledger contract.
@@ -11,7 +11,7 @@ from testcases.testing import Testing
 #  2. If the txHash is not found or (current-height - the block height of the tx) > max-traceable-blocks, it will return null.
 #  3. If the txHash is found, it will return the tx.
 # Expect Result: The getTx method is working as expected.
-class GetTx(Testing):
+class GetTx(LedgerTesting):
     def __init__(self):
         super().__init__("GetTx")
 
@@ -39,12 +39,29 @@ class GetTx(Testing):
         assert result['stack'][0]['type'] == 'Any'
         assert 'value' not in result['stack'][0] or result['stack'][0]['value'] is None
 
+    def _check_normal_case(self):
+        context = self.submit_confirmed_tx()
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransaction",
+                                             [self._encode_uint256_param(context['tx_id'])])
+        self.logger.info(f"GetTx with valid tx hash result: {result}")
+
+        assert 'exception' not in result or result['exception'] is None
+        assert len(result['stack']) == 1, f"Expected 1 stack item, got {len(result['stack'])}"
+
+        tx = result['stack'][0]
+        assert tx['type'] == 'Array', f"Expected Array, got {tx['type']}"
+        fields = tx['value']
+        assert len(fields) == 8, f"Expected 8 tx fields, got {len(fields)}"
+
+        assert fields[0]['type'] == 'ByteString' and fields[0]['value'] == context['tx_hash_b64']
+        assert fields[3]['type'] == 'ByteString' and fields[3]['value'] == context['sender_b64']
+        assert fields[7]['type'] == 'ByteString' and fields[7]['value'] == context['script_b64']
+
     def run_test(self):
         self._check_argument_null()
         self._check_tx_hash_too_long()
         self._check_tx_not_found()
-
-        # TODO: check normal cases
+        self._check_normal_case()
 
 
 # Run with: python3 -B -m testcases.ledger.get_tx

@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getTransactionFromBlock method in Ledger contract.
@@ -15,7 +15,7 @@ from testcases.testing import Testing
 #  6. If the blockIndexOrHash.length less than 32, it will be treated as a block index and must be in [0, uint32.MaxValue].
 #  7. If the blockIndexOrHash.length greater than 32, it will fail.
 # Expect Result: The getTransactionFromBlock method is working as expected.
-class TxFromBlock(Testing):
+class TxFromBlock(LedgerTesting):
     def __init__(self):
         super().__init__("TxFromBlock")
 
@@ -53,14 +53,38 @@ class TxFromBlock(Testing):
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionFromBlock",
                                              [{'type': 'ByteArray', 'value': hash}, {'type': 'Integer', 'value': 0}])
         self.logger.info(f"GetTransactionFromBlock with block hash too long result: {result}")
-        assert 'exception' in result and 'Invalid indexOrHash length' in result['exception']
+        assert 'exception' in result and 'Invalid blockIndexOrHash length' in result['exception']
+
+    def _assert_transaction(self, stack_item: dict, context: dict):
+        assert stack_item['type'] == 'Array'
+        tx = stack_item['value']
+        assert len(tx) == 8, f"Expected 8 tx fields, got {len(tx)}"
+        assert tx[0]['type'] == 'ByteString' and tx[0]['value'] == context['tx_hash_b64']
+        assert tx[3]['type'] == 'ByteString' and tx[3]['value'] == context['sender_b64']
+        assert tx[7]['type'] == 'ByteString' and tx[7]['value'] == context['script_b64']
+
+    def _check_normal_case(self):
+        context = self.submit_confirmed_tx()
+
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionFromBlock",
+                                             [{'type': 'ByteArray', 'value': context['block_index_b64']},
+                                              {'type': 'Integer', 'value': context['tx_index']}])
+        self.logger.info(f"GetTransactionFromBlock with block index result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        self._assert_transaction(result['stack'][0], context)
+
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionFromBlock",
+                                             [{'type': 'ByteArray', 'value': context['block_hash_b64']},
+                                              {'type': 'Integer', 'value': context['tx_index']}])
+        self.logger.info(f"GetTransactionFromBlock with block hash result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        self._assert_transaction(result['stack'][0], context)
 
     def run_test(self):
         self._check_argument_null()
         self._check_block_index()
         self._check_block_hash_too_long()
-
-        # TODO: check normal cases
+        self._check_normal_case()
 
 
 # Run with: python3 -B -m testcases.ledger.get_tx_from_block

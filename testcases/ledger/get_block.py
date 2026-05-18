@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getBlock method in Ledger contract.
@@ -15,7 +15,7 @@ from testcases.testing import Testing
 #  6. If the block is not found, it will return null.
 #  7. If the block is found, it will return the trimmed block.
 # Expect Result: The getBlock method is working as expected.
-class GetBlock(Testing):
+class GetBlock(LedgerTesting):
     def __init__(self):
         super().__init__("GetBlock")
 
@@ -41,12 +41,35 @@ class GetBlock(Testing):
         self.logger.info(f"GetBlock with block hash too long result: {result}")
         assert 'exception' in result and 'Invalid indexOrHash length' in result['exception']
 
+    def _assert_trimmed_block(self, stack_item: dict, context: dict):
+        assert stack_item['type'] == 'Array'
+        fields = stack_item['value']
+        assert len(fields) == 10, f"Expected 10 block fields, got {len(fields)}"
+        assert fields[0]['type'] == 'ByteString' and fields[0]['value'] == context['block_hash_b64']
+        assert fields[6]['type'] == 'Integer' and fields[6]['value'] == str(context['block_index'])
+        assert fields[9]['type'] == 'Integer'
+        assert int(fields[9]['value']) > context['tx_index']
+
+    def _check_normal_case(self):
+        context = self.submit_confirmed_tx()
+
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getBlock",
+                                             [{'type': 'ByteArray', 'value': context['block_index_b64']}])
+        self.logger.info(f"GetBlock with block index result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        self._assert_trimmed_block(result['stack'][0], context)
+
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getBlock",
+                                             [{'type': 'ByteArray', 'value': context['block_hash_b64']}])
+        self.logger.info(f"GetBlock with block hash result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        self._assert_trimmed_block(result['stack'][0], context)
+
     def run_test(self):
         self._check_argument_null()
         self._check_block_index_out_of_range()
         self._check_block_hash_too_long()
-
-        # TODO: check normal cases
+        self._check_normal_case()
 
 
 # Run with: python3 -B -m testcases.ledger.get_block
