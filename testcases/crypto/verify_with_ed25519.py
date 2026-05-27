@@ -55,12 +55,21 @@ class VerifyWithEd25519(Testing):
         # Step 2: verify with invalid public key.
         self.logger.info("Test verifyWithEd25519 with invalid public key")
         # N4 has exception if PublicKey.Length isn't 32, but N3 has false.
-        self._check_verify_with_ed25519([data, b'1' * 33, b'2' * 64], result=False)
+        # NOTE: This API has different behavior before HF_Gorgon and after HF_Gorgon.
+        block_index = self.client.get_block_index()
+        if not self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index):
+            self._check_verify_with_ed25519([data, b'1' * 33, b'2' * 64], result=False)
+        else:
+            self._check_verify_with_ed25519([data, b'1' * 33, b'2' * 64], exception="Public key size should be 32")
 
         # Step 3: verify with invalid signature.
         self.logger.info("Test verifyWithEd25519 with invalid signature")
         # N4 has exception if signature.Length isn't 64, but N3 has false.
-        self._check_verify_with_ed25519([data, b'1' * 32, b'2' * 63], result=False)
+        # NOTE: This API has different behavior before HF_Gorgon and after HF_Gorgon.
+        if not self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index):
+            self._check_verify_with_ed25519([data, b'1' * 32, b'2' * 63], result=False)
+        else:
+            self._check_verify_with_ed25519([data, b'1' * 32, b'2' * 63], exception="Signature size should be 64")
 
         # Step 4: verify with null signature.
         self.logger.info("Test verifyWithEd25519 with null signature")

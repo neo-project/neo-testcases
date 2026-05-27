@@ -24,7 +24,7 @@ class Murmur32Testing(Testing):
         params = [ContractParameter(type="ByteArray", value=None), ContractParameter(type="Integer", value=0)]
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "murmur32", params)
 
-        # The behavior of murmur32 API is changed in HF_Faun
+        # NOTE: The behavior of murmur32 API is changed in HF_Faun
         # self._check_murmur32_result_stack(result['stack'], '00000000')
         assert 'exception' in result and "can't be null" in result['exception']
 
@@ -55,7 +55,9 @@ class Murmur32Testing(Testing):
         # Murmur32 OK if the argument is null or 0.
         execution = application_log['executions'][0]
         assert 'trigger' in execution and execution['trigger'] == 'Application'
-        # assert execution['vmstate'] == 'HALT'  # The behavior of murmur32 API is changed in HF_Faun
+
+        # NOTE: The behavior of murmur32 API is changed in HF_Faun
+        # assert execution['vmstate'] == 'HALT'
         # self._check_murmur32_result_stack(execution['stack'], '00000000')
         assert execution['vmstate'] == 'FAULT'
         assert 'exception' in execution and "can't be null" in execution['exception']

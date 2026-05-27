@@ -1,5 +1,6 @@
 
 import base64
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -45,7 +46,11 @@ class Contracts(Testing):
         result = self.client.invoke_function(CONTRACT_MANAGEMENT_CONTRACT_HASH, "getContract",
                                              [ContractParameter(type="ByteArray", value=contract_hash)])
         self.logger.info(f"getContract result: {result}")
-        self._check_contract_state(result, contract_hash, contract_id)
+
+        # NOTE: the behavior of getContract is changed after HF_Gorgon?
+        block_index = self.client.get_block_index()
+        update_counter = 1 if self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index) else 0
+        self._check_contract_state(result, contract_hash, contract_id, update_counter=update_counter)
 
     def _is_contract(self, contract_hash: str, expected: bool):
         contract_hash = self._decode_hash(contract_hash)
@@ -58,7 +63,11 @@ class Contracts(Testing):
         result = self.client.invoke_function(CONTRACT_MANAGEMENT_CONTRACT_HASH, "getContractById",
                                              [ContractParameter(type="Integer", value=contract_id)])
         self.logger.info(f"getContractById result: {result}")
-        self._check_contract_state(result, contract_hash, contract_id)
+
+        # NOTE: the behavior of getContractById is changed after HF_Gorgon?
+        block_index = self.client.get_block_index()
+        update_counter = 1 if self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index) else 0
+        self._check_contract_state(result, contract_hash, contract_id, update_counter=update_counter)
 
     def _has_method(self, contract_hash: str, method: str, pcount: int, expected: bool):
         contract_hash = self._decode_hash(contract_hash)

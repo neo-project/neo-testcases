@@ -144,7 +144,7 @@ function generate_node_config {
         ProtocolConfiguration = @{
             Network = 1234567890
             AddressVersion = 53
-            MillisecondsPerBlock = 15000
+            MillisecondsPerBlock = 3000
             MaxTransactionsPerBlock = 5000
             MemoryPoolMaxTransactions = 50000
             MaxTraceableBlocks = 2102400

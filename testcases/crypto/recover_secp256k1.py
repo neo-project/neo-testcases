@@ -48,26 +48,34 @@ class RecoverSecp256k1(Testing):
                                              [{'type': 'ByteArray', 'value': None},
                                               {'type': 'ByteArray', 'value': signature}])
         self.logger.info(f"Invoke recoverSecp256k1 with null message hash result: {result}")
-        self._check_recover_secp256k1_failed_result(result)
+        # self._check_recover_secp256k1_failed_result(result)
+        # NOTE: The behavior of recoverSecp256k1 API is changed in HF_Faun
+        assert 'exception' in result and "can't be null" in result['exception']
 
         # Step 2: invoke the recoverSecp256k1 function with null signature
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "recoverSecp256K1",
                                              [{'type': 'ByteArray', 'value': message_hash},
                                               {'type': 'ByteArray', 'value': None}])
         self.logger.info(f"Invoke recoverSecp256k1 with null signature result: {result}")
-        self._check_recover_secp256k1_failed_result(result)
+        # self._check_recover_secp256k1_failed_result(result)
+        # NOTE: The behavior of recoverSecp256k1 API is changed in HF_Faun
+        assert 'exception' in result and "can't be null" in result['exception']
 
         # Step 3: invoke the recoverSecp256k1 function with null message hash and signature
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "recoverSecp256K1",
                                              [{'type': 'ByteArray'}, {'type': 'ByteArray', 'value': signature}])
         self.logger.info(f"Invoke recoverSecp256k1 with null message hash result: {result}")
-        self._check_recover_secp256k1_failed_result(result)
+        # self._check_recover_secp256k1_failed_result(result)
+        # NOTE: The behavior of recoverSecp256k1 API is changed in HF_Faun
+        assert 'exception' in result and "can't be null" in result['exception']
 
         # Step 4: invoke the recoverSecp256k1 function with null signature
         result = self.client.invoke_function(CRYPTO_CONTRACT_HASH, "recoverSecp256K1",
                                              [{'type': 'ByteArray', 'value': message_hash}, {'type': 'ByteArray'}])
         self.logger.info(f"Invoke recoverSecp256k1 with null signature result: {result}")
-        self._check_recover_secp256k1_failed_result(result)
+        # self._check_recover_secp256k1_failed_result(result)
+        # NOTE: The behavior of recoverSecp256k1 API is changed in HF_Faun
+        assert 'exception' in result and "can't be null" in result['exception']
 
     def _check_recover_secp256k1_invalid_parameters(self):
         signature = self.secp256k1_private_key.sign(b"hello world", hashfunc=hashlib.sha256)

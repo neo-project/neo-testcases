@@ -1,5 +1,5 @@
 
-from neo import NamedCurveHash
+from neo import Hardforks, NamedCurveHash
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -64,11 +64,19 @@ class VerifyWithEcdsa(Testing):
         self.logger.info("Test verifyWithECDsa with invalid signature")
         private_key = ecdsa.SigningKey.generate(curve=ecdsa.NIST256p)
         public_key = private_key.get_verifying_key().to_string('compressed')
-        self._check_verify_with_ecdsa([data, public_key, b'2' * 63, NamedCurveHash.SECP256R1_SHA256], result=False)
+
+        # NOTE: This API has different behavior before HF_Gorgon and after HF_Gorgon.
+        block_index = self.client.get_block_index()
+        if not self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index):
+            self._check_verify_with_ecdsa([data, public_key, b'2' * 63, NamedCurveHash.SECP256R1_SHA256], result=False)
+        else:
+            self._check_verify_with_ecdsa([data, public_key, b'2' * 63, NamedCurveHash.SECP256R1_SHA256],
+                                          exception="Signature size should be 64 bytes")
+        # self._check_verify_with_ecdsa([data, public_key, b'2' * 63, NamedCurveHash.SECP256R1_SHA256], result=False)
 
         # Step 5: verify with null signature.
         self.logger.info("Test verifyWithECDsa with null signature")
-        # The behavior of verifyWithECDsa API is changed in HF_Faun, it return false before HF_Faun.
+        # NOTE: The behavior of verifyWithECDsa API is changed in HF_Faun, it return false before HF_Faun.
         self._check_verify_with_ecdsa([data, public_key, None, NamedCurveHash.SECP256R1_SHA256],
                                       exception="can't be null")
 
@@ -86,7 +94,7 @@ class VerifyWithEcdsa(Testing):
         # Step 8: verify with unknown named curve hash.
         self.logger.info("Test verifyWithECDsa with invalid named curve hash")
         # The given key '99' was not present in the dictionary.
-        self._check_verify_with_ecdsa([data, public_key, b'2' * 64, 99], exception='not present in the dictionary')
+        self._check_verify_with_ecdsa([data, public_key, b'2' * 64, 99], exception='Unsupported curve or hash algorithm')
 
     def _check_secp256k1(self):
         # Step 1: verify with valid secp256k1SHA256

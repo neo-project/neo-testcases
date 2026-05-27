@@ -14,8 +14,8 @@ class MillisecondsPerBlock(Testing):
 
     def __init__(self):
         super().__init__("MillisecondsPerBlock")
-        self.original_millis_per_block = 15_000
-        self.updated_millis_per_block = 10_000
+        self.original_millis_per_block = 3_000
+        self.updated_millis_per_block = 5_000
         self.min_millis_per_block = 1
         self.max_millis_per_block = 30_000
         self.neo3_only = True  # NEO4 hasn't milliseconds_per_block policy.
