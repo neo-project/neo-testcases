@@ -101,7 +101,12 @@ class AccountBlocking(Testing):
         elif expected is not None:
             self.check_execution_result(application_log['executions'][0], stack=[('Boolean', expected)])
         else:
-            pass  # not check the result
+            execution = application_log['executions'][0]
+            assert execution['trigger'] == 'Application'
+            assert execution['vmstate'] == 'HALT'
+            assert 'exception' in execution and execution['exception'] is None
+            assert len(execution['stack']) == 1
+            assert execution['stack'][0]['type'] == 'Boolean'
 
     def run_test(self):
         # Step 1: check the account is not blocked
@@ -126,7 +131,7 @@ class AccountBlocking(Testing):
         self._block_account(self.account_to_block, False)
 
         # Step 8: unblock the account
-        self._unblock_account(self.account_to_block)
+        self._unblock_account(self.account_to_block, True)
 
         # Step 9: check the account is not blocked
         self._is_blocked(self.account_to_block, False)

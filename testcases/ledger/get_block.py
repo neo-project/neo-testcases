@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getBlock method in Ledger contract.
@@ -15,7 +15,7 @@ from testcases.testing import Testing
 #  6. If the block is not found, it will return null.
 #  7. If the block is found, it will return the trimmed block.
 # Expect Result: The getBlock method is working as expected.
-class GetBlock(Testing):
+class GetBlock(LedgerTesting):
     def __init__(self):
         super().__init__("GetBlock")
 
@@ -23,7 +23,7 @@ class GetBlock(Testing):
         # Step 1: check argument null with indexOrHash is null
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getBlock", [{'type': 'ByteArray'}])
         self.logger.info(f"GetBlock with null indexOrHash result: {result}")
-        assert 'exception' in result and 'Object reference not set to an instance of an object' in result['exception']
+        self._check_null_argument_exception(result)
 
     def _check_block_index_out_of_range(self):
         # Step 1: check block index out of range
@@ -41,12 +41,33 @@ class GetBlock(Testing):
         self.logger.info(f"GetBlock with block hash too long result: {result}")
         assert 'exception' in result and 'Invalid indexOrHash length' in result['exception']
 
+    def _check_block_not_found(self):
+        future_index = self.client.get_block_index() + 100
+        height = self._block_index_to_base64(future_index)
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getBlock",
+                                             [{'type': 'ByteArray', 'value': height}])
+        self.logger.info(f"GetBlock with block not found result: {result}")
+        self._check_null_stack_item(result)
+
+    def _check_normal_cases(self):
+        marker = self._send_marker_tx()
+
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getBlock",
+                                             [{'type': 'ByteArray', 'value': marker["block_index_base64"]}])
+        self.logger.info(f"GetBlock with block index result: {result}")
+        self._check_block_stack(result, marker)
+
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getBlock",
+                                             [{'type': 'ByteArray', 'value': marker["block_hash_base64"]}])
+        self.logger.info(f"GetBlock with block hash result: {result}")
+        self._check_block_stack(result, marker)
+
     def run_test(self):
         self._check_argument_null()
         self._check_block_index_out_of_range()
         self._check_block_hash_too_long()
-
-        # TODO: check normal cases
+        self._check_block_not_found()
+        self._check_normal_cases()
 
 
 # Run with: python3 -B -m testcases.ledger.get_block

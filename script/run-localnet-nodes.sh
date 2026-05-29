@@ -161,7 +161,8 @@ generate_node_config() {
       "HF_Cockatrice": 1,
       "HF_Domovoi": 1,
       "HF_Echidna": 1,
-      "HF_Faun": 1
+      "HF_Faun": 1,
+      "HF_Gorgon": 1
     },
     "InitialGasDistribution": 5200000000000000,
     "ValidatorsCount": 7,

@@ -1,4 +1,6 @@
 
+import base64
+
 from neo.contract import STDLIB_CONTRACT_HASH
 from testcases.stdlib.base import StdLibTesting
 
@@ -33,6 +35,25 @@ class Base64Encode(StdLibTesting):
         self.logger.info(f"Invoke 'base64Decode' with invalid base64 encoded string result: {result}")
         assert 'exception' in result and 'The input is not a valid Base-64 string' in result['exception']
 
+    def _check_normal_cases(self):
+        source_bytes = b'0123456789abcdef'
+        source = base64.b64encode(source_bytes).decode('utf-8')
+
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base64Encode",
+                                             [{'type': 'ByteArray', 'value': source}])
+        self.logger.info(f"Invoke 'base64Encode' with normal data result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+
+        encoded = base64.b64encode(source_bytes)
+        expected = base64.b64encode(encoded).decode('utf-8')
+        self.check_stack(result['stack'], [('ByteString', expected)])
+
+        result = self.client.invoke_function(STDLIB_CONTRACT_HASH, "base64Decode",
+                                             [{'type': 'String', 'value': encoded.decode('utf-8')}])
+        self.logger.info(f"Invoke 'base64Decode' with normal data result: {result}")
+        assert 'exception' not in result or result['exception'] is None
+        self.check_stack(result['stack'], [('ByteString', source)])
+
     def run_test(self):
         # Step 1: Check argument is null
         self._check_argument_null()
@@ -43,7 +64,8 @@ class Base64Encode(StdLibTesting):
         # Step 3: Check length limit
         self.check_size_limit("base64Encode", pramater_type='ByteArray')
 
-        # TODO: check normal cases
+        # Step 4: Check normal cases
+        self._check_normal_cases()
 
 
 # Run with: python3 -B -m testcases.stdlib.base64_encode

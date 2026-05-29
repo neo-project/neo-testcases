@@ -2,7 +2,7 @@
 import base64
 
 from neo.contract import *
-from testcases.testing import Testing
+from testcases.ledger.base import LedgerTesting
 
 
 # Operation: this case tests the getTxHeight method in Ledger contract.
@@ -11,7 +11,7 @@ from testcases.testing import Testing
 #  2. If the txHash is not found or (current-height - the block height of the tx) > max-traceable-blocks, it will return -1.
 #  3. If the txHash is found, it will return the block height of the tx.
 # Expect Result: The getTxHeight method is working as expected.
-class GetTxHeight(Testing):
+class GetTxHeight(LedgerTesting):
     def __init__(self):
         super().__init__("GetTxHeight")
 
@@ -19,7 +19,7 @@ class GetTxHeight(Testing):
         # Step 1: check argument null
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionHeight", [{'type': 'ByteArray'}])
         self.logger.info(f"GetTxHeight with null argument result: {result}")
-        assert 'exception' in result and 'Object reference not set to an instance of an object' in result['exception']
+        self._check_null_argument_exception(result)
 
     def _check_tx_hash_too_long(self):
         # Step 1: check tx hash too long
@@ -29,11 +29,25 @@ class GetTxHeight(Testing):
         self.logger.info(f"GetTxHeight with tx hash too long result: {result}")
         assert 'exception' in result and 'Invalid UInt256 length' in result['exception']
 
+    def _check_tx_not_found(self):
+        hash = base64.b64encode(b'1' * 32).decode('utf-8')
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionHeight",
+                                             [{'type': 'ByteArray', 'value': hash}])
+        self.logger.info(f"GetTxHeight with tx not found result: {result}")
+        self.check_stack(result['stack'], [('Integer', '-1')])
+
+    def _check_normal_cases(self):
+        marker = self._send_marker_tx()
+        result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionHeight",
+                                             [ContractParameter(type="Hash256", value=marker["tx_id"])])
+        self.logger.info(f"GetTxHeight with existing tx result: {result}")
+        self.check_stack(result['stack'], [('Integer', str(marker["block_index"]))])
+
     def run_test(self):
         self._check_argument_null()
         self._check_tx_hash_too_long()
-
-        # TODO: check normal cases
+        self._check_tx_not_found()
+        self._check_normal_cases()
 
 
 # Run with: python3 -B -m testcases.ledger.get_tx_height
