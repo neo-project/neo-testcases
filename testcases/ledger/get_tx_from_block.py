@@ -31,7 +31,7 @@ class TxFromBlock(LedgerTesting):
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionFromBlock",
                                              [{'type': 'ByteArray', 'value': block_index}, {'type': 'Integer'}])
         self.logger.info(f"GetTransactionFromBlock with null txIndex result: {result}")
-        assert 'exception' in result and 'Specified cast is not valid' in result['exception']
+        assert 'exception' in result and "`txIndex` can't be null" in result['exception']
 
     def _check_block_index(self):
         # Step 1: check block index out of range
@@ -53,7 +53,7 @@ class TxFromBlock(LedgerTesting):
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionFromBlock",
                                              [{'type': 'ByteArray', 'value': hash}, {'type': 'Integer', 'value': 0}])
         self.logger.info(f"GetTransactionFromBlock with block hash too long result: {result}")
-        assert 'exception' in result and 'Invalid indexOrHash length' in result['exception']
+        assert 'exception' in result and 'Invalid blockIndexOrHash length' in result['exception']
 
     def _check_block_not_found(self):
         future_index = self.client.get_block_index() + 100

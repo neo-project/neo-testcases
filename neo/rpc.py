@@ -1,6 +1,7 @@
 
 import requests
 import base64
+import time
 
 from neo import UInt160
 from neo.contract import ContractParameter, GAS_CONTRACT_HASH, NEO_CONTRACT_HASH
@@ -19,13 +20,7 @@ class RpcClient:
 
     def send(self, method: str, params: list):
         self._id += 1
-        req = {
-            "jsonrpc": "2.0",
-            "id": self._id,
-            "method": method,
-            "params": params
-        }
-
+        req = {"jsonrpc": "2.0", "id": self._id, "method": method, "params": params}
         endpoint = self._endpoint
         if not endpoint.startswith("http") and not endpoint.startswith("https"):
             endpoint = f"http://{endpoint}"
@@ -72,11 +67,11 @@ class RpcClient:
                                       [ContractParameter(type="Hash160", value=account)])
         return int(result['stack'][0]['value'])
 
-    def invoke_function(
-            self, script_hash: str | UInt160, method: str, args: list[ContractParameter | dict] = []) -> any:
+    def invoke_function(self, script_hash: str | UInt160, method: str,
+                        args: list[ContractParameter | dict] = []) -> any:
         script_hash = str(script_hash) if isinstance(script_hash, UInt160) else script_hash
         return self.send("invokefunction",
-                          [script_hash, method, [x if isinstance(x, dict) else x.to_dict() for x in args]])
+                         [script_hash, method, [x if isinstance(x, dict) else x.to_dict() for x in args]])
 
     def invoke_script(self, script: bytes, signers: list[dict] = []) -> dict:
         return self.send("invokescript", [base64.b64encode(script).decode('utf-8'), signers, True])
@@ -90,8 +85,21 @@ class RpcClient:
     def calculate_network_fee(self, raw_tx: bytes) -> dict:
         return self.send("calculatenetworkfee", [base64.b64encode(raw_tx).decode('utf-8')])
 
-    def get_application_log(self, tx_hash: str, trigger_type: str = "") -> dict:
+    def get_application_log(self, tx_hash: str, trigger_type: str = "",
+                            timeout: float = 30.0, poll_interval: float = 1.0) -> dict:
         """
         From Plugin ApplicationLogs.
+
+        A transaction can enter the mempool just after the next block's
+        transactions have been selected. Retry while its application log is
+        not available yet, but preserve every other RPC error.
         """
-        return self.send("getapplicationlog", [tx_hash, trigger_type])
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                return self.send("getapplicationlog", [tx_hash, trigger_type])
+            except RpcError as error:
+                log_not_ready = (error.code == -32602 and "Unknown transaction/blockhash" in error.message)
+                if not log_not_ready or time.monotonic() >= deadline:
+                    raise
+                time.sleep(min(poll_interval, max(0.0, deadline - time.monotonic())))

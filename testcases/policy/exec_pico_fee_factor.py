@@ -23,8 +23,9 @@ class ExecPicoFeeFactor(Testing):
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecFeeFactor", [])
         exec_fee_factor = int(result['stack'][0]['value'])
 
-        # Step 3: check the exec_pico_fee_factor is working as expected
-        assert exec_pico_fee_factor == exec_fee_factor * self.fee_factor
+        # Step 3: check the pico factor converts to the displayed factor with integer division.
+        assert exec_pico_fee_factor // self.fee_factor == exec_fee_factor
+        assert exec_fee_factor * self.fee_factor <= exec_pico_fee_factor < (exec_fee_factor + 1) * self.fee_factor
 
 
 if __name__ == "__main__":

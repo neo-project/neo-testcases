@@ -47,9 +47,6 @@ class Env:
     # Whether to enable neo4 features
     neo4_enable: bool = False
 
-    def is_hardfork_enabled(self, hardfork: str, block_index: int) -> bool:
-        return hasattr(self.hardforks, hardfork) and getattr(self.hardforks, hardfork) <= block_index
-
     def as_dict(self) -> dict:
         return {
             "rpc_endpoint": self.rpc_endpoint,
