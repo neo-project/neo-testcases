@@ -1,6 +1,7 @@
 
 import base64
 
+from neo import WitnessScope
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -15,7 +16,12 @@ class LedgerTesting(Testing):
 
     def _block_index_to_base64(self, index: int) -> str:
         length = max(1, (index.bit_length() + 7) // 8)
-        return base64.b64encode(index.to_bytes(length, "little")).decode("utf-8")
+        raw_index = index.to_bytes(length, "little")
+        # Ledger contract decodes the index with BigInteger, which uses signed
+        # little-endian encoding. Add a zero byte to keep values >= 0x80 positive.
+        if raw_index[-1] & 0x80:
+            raw_index += b"\x00"
+        return base64.b64encode(raw_index).decode("utf-8")
 
     def _send_marker_tx(self, marker: int = 42) -> dict:
         start_index = self.client.get_block_index()
@@ -120,7 +126,7 @@ class LedgerTesting(Testing):
             [signer[0], signer[1], signer[2], signer[3], signer[4]],
             [
                 ("ByteString", marker["sender_base64"]),
-                ("Integer", "16"),
+                ("Integer", str(int(WitnessScope.CALLED_BY_ENTRY))),
                 ("Array", []),
                 ("Array", []),
                 ("Array", []),

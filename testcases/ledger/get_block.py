@@ -43,6 +43,9 @@ class GetBlock(LedgerTesting):
 
     def _check_block_not_found(self):
         future_index = self.client.get_block_index() + 100
+        index_length = max(1, (future_index.bit_length() + 7) // 8)
+        if future_index.to_bytes(index_length, "little")[-1] < 0x80:
+            future_index |= 1 << (index_length * 8 - 1)
         height = self._block_index_to_base64(future_index)
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getBlock",
                                              [{'type': 'ByteArray', 'value': height}])

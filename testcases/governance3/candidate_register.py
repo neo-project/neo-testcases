@@ -1,15 +1,15 @@
 
 import base64
 
-from neo import Account, CallFlags
-from neo.contract import NEO_CONTRACT_HASH, ScriptBuilder
+from neo import Account, CallFlags, UInt160, WitnessScope
+from neo.contract import ContractParameter, GAS_CONTRACT_HASH, NEO_CONTRACT_HASH, ScriptBuilder
 from testcases.testing import Testing
 
 
 # Operation: this case registers candidates(self.env.others[0,1]).
-# Method: RegisterCandidate(byte[] publicKey) -> bool
+# Method: transfer the register price in GAS to NEO with the public key as payment data.
 #  1. The publickey cannot be null.
-#  2. The system fee must greater than the register price + original system fee.
+#  2. The registration price is paid by GAS, not by the transaction system fee.
 #  3. Only can register self.
 #  4. The vote is zero after initial registration.
 # Expect Result: The candidate is registered successfully.
@@ -46,46 +46,14 @@ class CandidateRegister(Testing):
         assert 'value' in notification[2] and notification[2]['value'] == '0'
 
     def _register_with_null(self):
-        block_index = self.client.get_block_index()
-        script = ScriptBuilder().emit_dynamic_call(
-            script_hash=NEO_CONTRACT_HASH,
-            method="registerCandidate",
-            call_flags=(CallFlags.STATES | CallFlags.ALLOW_NOTIFY),
-            args=[None],
-        ).to_bytes()
-
-        # Step 1: check register with null and insufficient GAS
-        sysfee = self.default_sysfee
-        tx = self.make_tx(self.env.others[0], script, sysfee, self.default_netfee, block_index + 10)
-        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
-        self.logger.info(f"Transaction sent: {tx_id}")
-
-        block_index = self.client.get_block_index()
-        self.wait_next_block(block_index)
-
-        application_log = self.client.get_application_log(tx_id)
-        self.logger.info(f"Application log: {application_log}")
-
-        execution = application_log['executions'][0]
-        assert 'trigger' in execution and execution['trigger'] == 'Application'
-        assert execution['vmstate'] == 'FAULT'
-        assert 'exception' in execution and 'Insufficient GAS' in execution['exception']
-
-        # Step 2: check register with null and sufficient GAS
-        sysfee = self.default_sysfee + self.register_price
-        tx = self.make_tx(self.env.others[0], script, sysfee, self.default_netfee, block_index + 10)
-        tx_id = self.client.send_raw_tx(tx.to_array())['hash']
-        self.logger.info(f"Transaction sent: {tx_id}")
-
-        block_index = self.client.get_block_index()
-        self.wait_next_block(block_index)
-        application_log = self.client.get_application_log(tx_id)
-        self.logger.info(f"Application log: {application_log}")
-
-        execution = application_log['executions'][0]
-        assert 'trigger' in execution and execution['trigger'] == 'Application'
-        assert execution['vmstate'] == 'FAULT'
-        assert 'Object reference not set to an instance of an object' in execution['exception']
+        result = self.client.invoke_function(
+            NEO_CONTRACT_HASH,
+            "registerCandidate",
+            [ContractParameter(type="PublicKey", value=None)],
+        )
+        self.logger.info(f"registerCandidate with null result: {result}")
+        assert result['state'] == 'FAULT'
+        assert "argument `pubkey` can't be null" in result['exception']
 
     def _get_candidate_votes(self, public_key: bytes):
         public_key = base64.b64encode(public_key).decode('utf-8')
@@ -97,20 +65,22 @@ class CandidateRegister(Testing):
     def _register_with_ok(self, account: Account, another_public_key: bytes | None = None):
         public_key = another_public_key if another_public_key is not None else account.public_key.encode_point(True)
         candidate_votes = self._get_candidate_votes(public_key)
-        if candidate_votes >= 0:
+        if another_public_key is None and candidate_votes >= 0:
             self.logger.info(f"Candidate {public_key.hex()} has {candidate_votes} votes. Skip registration.")
             return
 
-        # Step 1: check register with public key and sufficient GAS
+        # Step 1: pay the registration price to NEO. The public key is the payment data.
         block_index = self.client.get_block_index()
         script = ScriptBuilder().emit_dynamic_call(
-            script_hash=NEO_CONTRACT_HASH,
-            method="registerCandidate",
-            call_flags=(CallFlags.STATES | CallFlags.ALLOW_NOTIFY),
-            args=[public_key],
+            script_hash=GAS_CONTRACT_HASH,
+            method="transfer",
+            call_flags=(CallFlags.STATES | CallFlags.ALLOW_CALL | CallFlags.ALLOW_NOTIFY),
+            args=[account.script_hash, UInt160.from_string(NEO_CONTRACT_HASH), self.register_price, public_key],
         ).to_bytes()
-        sysfee = self.default_sysfee + self.register_price
-        tx = self.make_tx(account, script, sysfee, self.default_netfee, block_index + 10)
+        tx = self.make_tx(
+            account, script, self.default_sysfee, self.default_netfee, block_index + 10,
+            witness_scope=WitnessScope.GLOBAL,
+        )
         tx_id = self.client.send_raw_tx(tx.to_array())['hash']
         self.logger.info(f"Transaction sent: {tx_id}")
 
@@ -120,19 +90,20 @@ class CandidateRegister(Testing):
         self.logger.info(f"Application log: {application_log}")
 
         execution = application_log['executions'][0]
-        assert 'trigger' in execution and execution['trigger'] == 'Application'
-        assert execution['vmstate'] == 'HALT'
-        assert 'exception' not in execution or execution['exception'] is None
-
-        # Step 6: check the success of the registration. Not OK if register with another public key.
-        success = True if another_public_key is None else False
-        self.check_stack(execution['stack'], [('Boolean', success)])
-        if success:
-            assert 'notifications' in execution and len(execution['notifications']) == 1
-            self._check_register_notification(public_key, execution['notifications'][0])
-            assert self._get_candidate_votes(public_key) == 0
-        else:
+        if another_public_key is not None:
+            self.check_execution_result(execution, exception="Failed to register candidate")
             assert 'notifications' not in execution or len(execution['notifications']) == 0
+            return
+
+        self.check_execution_result(execution, stack=[('Boolean', True)])
+        notifications = [
+            notification for notification in execution['notifications']
+            if notification['contract'] == NEO_CONTRACT_HASH
+            and notification['eventname'] == 'CandidateStateChanged'
+        ]
+        assert len(notifications) == 1
+        self._check_register_notification(public_key, notifications[0])
+        assert self._get_candidate_votes(public_key) == 0
 
     def run_test(self):
         # Step 1: get the register price

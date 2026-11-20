@@ -1,6 +1,7 @@
 
 import base64
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.ledger.base import LedgerTesting
 
@@ -9,7 +10,8 @@ from testcases.ledger.base import LedgerTesting
 # Method: GetTransactionVmState(UInt256 txHash) -> VmState
 #  1. The txHash cannot be null.
 #  2. If the txHash is not found, it will return VmState.NONE.
-#  3. If the txHash is found, it will return the VM state of the tx.
+#  3. Before HF_Huyao, an existing tx has no persisted VM state and returns NONE.
+#  4. From HF_Huyao, it will return the persisted VM state of the tx.
 # Expect Result: The getTxVmState method is working as expected.
 class GetTxVmState(LedgerTesting):
     def __init__(self):
@@ -41,7 +43,10 @@ class GetTxVmState(LedgerTesting):
         result = self.client.invoke_function(LEDGER_CONTRACT_HASH, "getTransactionVMState",
                                              [ContractParameter(type="Hash256", value=marker["tx_id"])])
         self.logger.info(f"GetTxVmState with existing tx result: {result}")
-        self._check_vm_state_halt(result)
+
+        huyao_enabled = self.is_hardfork_enabled(Hardforks.HF_Huyao)
+        expected_state = '1' if huyao_enabled else '0'
+        self.check_stack(result['stack'], [('Integer', expected_state)])
 
     def run_test(self):
         self._check_argument_null()

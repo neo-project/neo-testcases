@@ -15,10 +15,25 @@ class SystemFeeExecFactor(FeeTesting):
         self.price_push1 = 1
         self.updated_exec_fee_factor = self.exec_fee_factor + 10
         self.pico_fee_factor = 1_0000
+        self.pico_exec_fee_factor = self.exec_fee_factor * self.pico_fee_factor
 
     def pre_test(self):
         super().pre_test()
-        self.updated_exec_fee_factor = self.exec_fee_factor + 10
+        if self.is_hardfork_enabled(Hardforks.HF_Faun):
+            result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecPicoFeeFactor", [])
+            self.logger.info(f"getExecPicoFeeFactor result: {result}")
+            self.pico_exec_fee_factor = int(result['stack'][0]['value'])
+            self.exec_fee_factor = self._effective_exec_fee_factor(self.pico_exec_fee_factor)
+            self.updated_exec_fee_factor = self._effective_exec_fee_factor(
+                self.pico_exec_fee_factor + self.pico_fee_factor)
+        else:
+            self.pico_exec_fee_factor = self.exec_fee_factor
+            self.updated_exec_fee_factor = self.exec_fee_factor + 10
+
+    def _effective_exec_fee_factor(self, pico_exec_fee_factor: int) -> int:
+        if not self.is_hardfork_enabled(Hardforks.HF_Faun):
+            return pico_exec_fee_factor
+        return (pico_exec_fee_factor + self.pico_fee_factor - 1) // self.pico_fee_factor
 
     def _execute_tx_with_push1_opcode(self, exec_fee_factor: int):
         # Step 2: build a tx with PUSH1 opcode
@@ -67,24 +82,19 @@ class SystemFeeExecFactor(FeeTesting):
         _ = self._execute_tx_with_push1_opcode(self.exec_fee_factor)
 
         # Step 3: update the exec_fee_factor
-        block_index = self.client.get_block_index()
-        exec_fee_factor = self.updated_exec_fee_factor
-        # The unit of exec_fee_factor is changed in HF_Faun, it is PicoGAS after HF_Faun.
-        if self.env.is_hardfork_enabled(Hardforks.HF_Faun, block_index):
-            exec_fee_factor = exec_fee_factor * self.pico_fee_factor
-        self._update_exec_fee_factor(self.updated_exec_fee_factor)
+        exec_fee_factor = self.pico_exec_fee_factor
+        if self.is_hardfork_enabled(Hardforks.HF_Faun):
+            exec_fee_factor += self.pico_fee_factor
+        else:
+            exec_fee_factor = self.updated_exec_fee_factor
+        self._update_exec_fee_factor(exec_fee_factor)
 
         # Step 4: execute a tx with PUSH1 opcode with the updated exec_fee_factor
         _ = self._execute_tx_with_push1_opcode(self.updated_exec_fee_factor)
 
     def post_test(self):
         # Step 5: set the exec_fee_factor to original exec_fee_factor
-        block_index = self.client.get_block_index()
-        exec_fee_factor = self.exec_fee_factor
-        # The unit of exec_fee_factor is changed in HF_Faun, it is PicoGAS after HF_Faun.
-        if self.env.is_hardfork_enabled(Hardforks.HF_Faun, block_index):
-            exec_fee_factor = exec_fee_factor * self.pico_fee_factor
-        self._update_exec_fee_factor(self.exec_fee_factor)
+        self._update_exec_fee_factor(self.pico_exec_fee_factor)
 
 
 # Run with: python3 -B -m testcases.system.fee.sysfee_exec_factor

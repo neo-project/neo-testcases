@@ -122,7 +122,9 @@ class MaxValidUntilBlockIncrement(Testing):
 
         # Check the execution, the max_valid_until_block_increment is {self.min_MVUBI - 1}, so the transaction is fault.
         execution = application_log['executions'][0]
-        self.check_execution_result(execution, exception=f'MVUBI must be between [{self.min_MVUBI}, {self.max_MVUBI}]')
+        self.check_execution_result(
+            execution,
+            exception=f'MaxValidUntilBlockIncrement must be between [{self.min_MVUBI}, {self.max_MVUBI}]')
 
         tx = self._make_update_max_valid_until_block_increment_tx(self.max_MVUBI + 1)
         tx_id = self.client.send_raw_tx(tx.to_array())['hash']
@@ -140,7 +142,9 @@ class MaxValidUntilBlockIncrement(Testing):
 
         # Check the execution, the max_valid_until_block_increment is {self.max_MVUBI + 1}, so the transaction is fault.
         execution = application_log['executions'][0]
-        self.check_execution_result(execution, exception=f'MVUBI must be between [{self.min_MVUBI}, {self.max_MVUBI}]')
+        self.check_execution_result(
+            execution,
+            exception=f'MaxValidUntilBlockIncrement must be between [{self.min_MVUBI}, {self.max_MVUBI}]')
 
     def run_test(self):
         self._get_original_max_valid_until_block_increment()

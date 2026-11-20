@@ -30,6 +30,22 @@ class Testing:
         self.neo4_only = False
         self.neo3_only = False
         self.hardfork = None
+        self._hardfork_heights = None
+
+    def is_hardfork_enabled(self, hardfork: str, block_index: int | None = None) -> bool:
+        if self._hardfork_heights is None:
+            protocol = self.client.get_version()['protocol']
+            self._hardfork_heights = {
+                fork['name']: fork['blockheight'] for fork in protocol['hardforks']
+            }
+
+        hardfork_name = hardfork.removeprefix('HF_')
+        activation_height = self._hardfork_heights.get(hardfork_name)
+        if activation_height is None:
+            return False
+        if block_index is None:
+            block_index = self.client.get_block_index()
+        return block_index >= activation_height
 
     def wait_next_block(self, current_block_index: int, wait_while: str = '', max_wait_seconds: int = 5*60) -> int:
         start_time = time.time()
@@ -86,14 +102,15 @@ class Testing:
             verification_script=create_multisig_redeemscript(m, [k for (k, _) in key_sign_pairs])
         )
 
-    def make_tx(self, account: Account, script: bytes, sysfee: int, netfee: int, valid_until_block: int) -> Transaction:
+    def make_tx(self, account: Account, script: bytes, sysfee: int, netfee: int, valid_until_block: int,
+                witness_scope: WitnessScope = WitnessScope.CALLED_BY_ENTRY) -> Transaction:
         tx = Transaction(
             version=TX_VERSION_V0,
             nonce=random.randint(0, 0xFFFFFFFF),
             system_fee=sysfee,
             network_fee=netfee,
             valid_until_block=valid_until_block,
-            signers=[Signer(account=account.script_hash, scope=WitnessScope.CALLED_BY_ENTRY)],
+            signers=[Signer(account=account.script_hash, scope=witness_scope)],
             attributes=[],
             script=script,
             witnesses=[],
@@ -160,7 +177,7 @@ class Testing:
         block_index = self.wait_next_block(1)  # Step 0: wait for creating block 1.
         self.logger.info(f"Current block index: {block_index}")
 
-        if self.hardfork is not None and not self.env.is_hardfork_enabled(self.hardfork, block_index):
+        if self.hardfork is not None and not self.is_hardfork_enabled(self.hardfork, block_index):
             self.logger.info(f"Skipping test for hardfork {self.hardfork} at index {block_index} not enabled")
             return
 

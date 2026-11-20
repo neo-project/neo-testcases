@@ -1,4 +1,5 @@
 
+from neo import Hardforks
 from neo.contract import *
 from testcases.testing import Testing
 
@@ -14,6 +15,9 @@ class ExecFeeFactor(Testing):
         super().__init__("ExecFeeFactor")
         self.original_exec_fee_factor = 30
         self.updated_exec_fee_factor = 20
+        self.original_displayed_exec_fee_factor = 30
+        self.exec_fee_factor_scale = 1
+        self.faun_enabled = False
         self.min_exec_fee_factor = 1
         self.max_exec_fee_factor = 100
 
@@ -32,10 +36,21 @@ class ExecFeeFactor(Testing):
         # Step 1: get the default exec fee factor
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecFeeFactor", [])
         self.logger.info(f"Get original exec fee factor result: {result}")
-        # self.check_stack(result['stack'], [('Integer', str(self.original_exec_fee_factor))])
 
-        self.original_exec_fee_factor = int(result['stack'][0]['value'])
-        self.updated_exec_fee_factor = self.original_exec_fee_factor + 10
+        self.original_displayed_exec_fee_factor = int(result['stack'][0]['value'])
+        block_index = self.client.get_block_index()
+        self.faun_enabled = self.is_hardfork_enabled(Hardforks.HF_Faun, block_index)
+
+        if self.faun_enabled:
+            self.exec_fee_factor_scale = 10_000
+            self.max_exec_fee_factor *= self.exec_fee_factor_scale
+            result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecPicoFeeFactor", [])
+            self.logger.info(f"Get original pico exec fee factor result: {result}")
+            self.original_exec_fee_factor = int(result['stack'][0]['value'])
+            self.updated_exec_fee_factor = self.original_exec_fee_factor + self.exec_fee_factor_scale
+        else:
+            self.original_exec_fee_factor = self.original_displayed_exec_fee_factor
+            self.updated_exec_fee_factor = self.original_exec_fee_factor + 10
 
     def _check_invoke_function_update_exec_fee_factor(self):
         # Step 2: set the exec fee factor to UPDATED_EXEC_FEE_FACTOR by rpc invoke_function.
@@ -45,7 +60,7 @@ class ExecFeeFactor(Testing):
 
         # Step 3: get the exec fee factor again, it should be the default exec fee factor.
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecFeeFactor", [])
-        self.check_stack(result['stack'], [('Integer', str(self.original_exec_fee_factor))])
+        self.check_stack(result['stack'], [('Integer', str(self.original_displayed_exec_fee_factor))])
 
     def _check_no_permission_update_exec_fee_factor(self):
         # Step 4: create a transaction to update the exec fee factor.
@@ -96,10 +111,11 @@ class ExecFeeFactor(Testing):
         execution = application_log['executions'][0]
         self.check_execution_result(execution, stack=[('Any', None)])
 
-        # Step 12: get the exec fee factor again, it should be UPDATED_EXEC_FEE_FACTOR.
+        # Step 12: get the exec fee factor again, it should be the updated value.
         result = self.client.invoke_function(POLICY_CONTRACT_HASH, "getExecFeeFactor", [])
         self.logger.info(f"Get updated exec fee factor result: {result}")
-        self.check_stack(result['stack'], [('Integer', str(exec_fee_factor))])
+        displayed_exec_fee_factor = exec_fee_factor // self.exec_fee_factor_scale
+        self.check_stack(result['stack'], [('Integer', str(displayed_exec_fee_factor))])
 
     def _check_exec_fee_factor_range(self):
         # Step 13: check the exec fee factor range

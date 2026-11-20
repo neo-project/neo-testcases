@@ -49,7 +49,7 @@ class Contracts(Testing):
 
         # NOTE: the behavior of getContract is changed after HF_Gorgon?
         block_index = self.client.get_block_index()
-        update_counter = 1 if self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index) else 0
+        update_counter = 1 if self.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index) else 0
         self._check_contract_state(result, contract_hash, contract_id, update_counter=update_counter)
 
     def _is_contract(self, contract_hash: str, expected: bool):
@@ -66,7 +66,7 @@ class Contracts(Testing):
 
         # NOTE: the behavior of getContractById is changed after HF_Gorgon?
         block_index = self.client.get_block_index()
-        update_counter = 1 if self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index) else 0
+        update_counter = 1 if self.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index) else 0
         self._check_contract_state(result, contract_hash, contract_id, update_counter=update_counter)
 
     def _has_method(self, contract_hash: str, method: str, pcount: int, expected: bool):

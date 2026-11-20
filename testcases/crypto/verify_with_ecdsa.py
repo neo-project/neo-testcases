@@ -67,7 +67,7 @@ class VerifyWithEcdsa(Testing):
 
         # NOTE: This API has different behavior before HF_Gorgon and after HF_Gorgon.
         block_index = self.client.get_block_index()
-        if not self.env.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index):
+        if not self.is_hardfork_enabled(Hardforks.HF_Gorgon, block_index):
             self._check_verify_with_ecdsa([data, public_key, b'2' * 63, NamedCurveHash.SECP256R1_SHA256], result=False)
         else:
             self._check_verify_with_ecdsa([data, public_key, b'2' * 63, NamedCurveHash.SECP256R1_SHA256],

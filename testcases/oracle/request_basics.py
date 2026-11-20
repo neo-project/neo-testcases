@@ -96,9 +96,9 @@ class OracleRequestBasics(Testing):
                                               ContractParameter(type="Any", value=None),
                                               ContractParameter(type="Integer", value=self.min_gas_for_response)])
         self.logger.info(f"Request result: {result}")
-        # Only contract can call `request` method, so the exception is "Operation is not valid".
+        # Only contracts can call the `request` method.
         # TODO: test contract call this method.
-        assert 'exception' in result and "Operation is not valid" in result['exception']
+        assert 'exception' in result and "Only contracts can make Oracle requests" in result['exception']
 
     def _request_userdata_exceeds_max_size(self):
         long_userdata = "a" * (self.userdata_max_size + 1)
@@ -109,9 +109,9 @@ class OracleRequestBasics(Testing):
                                               ContractParameter(type="String", value=long_userdata),
                                               ContractParameter(type="Integer", value=self.min_gas_for_response)])
         self.logger.info(f"Request result: {result}")
-        # Only contract can call `request` method, so the exception is "Operation is not valid".
+        # Only contracts can call the `request` method.
         # TODO: test contract call this method.
-        assert 'exception' in result and "Operation is not valid" in result['exception']
+        assert 'exception' in result and "Only contracts can make Oracle requests" in result['exception']
 
     def _request_gas_for_response_null(self):
         result = self.client.invoke_function(ORACLE_CONTRACT_HASH, "request",

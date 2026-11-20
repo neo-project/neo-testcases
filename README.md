@@ -4,11 +4,15 @@ This project contains the functional testcases for neo blockchain.
 ## Usage
 * Step 1: Start a neo privatenet/localnet with 7 nodes(DBFT and RpcServer plugins required)
 
-  Build neo with `dotnet build` and then start privatenet/localnet with `neo/scripts/run-localnet-nodes.sh`.
+  Build neo([neo-node](https://github.com/neo-project/neo)) with `dotnet build` and then start privatenet/localnet with `neo-testcases/scripts/run-localnet-nodes.sh.
 
-  `cd` to `neo` source directory and then run the following commands:
+  `cd` to `neo-node` source directory and then run the following commands:
   ```bash
   dotnet build
+  ```
+
+  Then `cd` to `neo-testcases`
+  ```bash
   cd scripts
   ./run-localnet-nodes.sh  # or ./run-localnet-nodes.ps1 on Windows
   ```
@@ -37,7 +41,7 @@ This project contains the functional testcases for neo blockchain.
 * After tests
 
   Stop the privatenet/localnet and clean the data.
-  `cd` to `neo` source directory and then run the following commands:
+  `cd` to `neo-testcases` source directory and then run the following commands:
   ```bash
   cd scripts
   ./run-localnet-nodes.sh stop  # or ./run-localnet-nodes.ps1 stop on Windows

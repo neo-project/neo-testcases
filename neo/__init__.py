@@ -20,6 +20,7 @@ class Hardforks:
     HF_Echidna = "HF_Echidna"
     HF_Faun = "HF_Faun"
     HF_Gorgon = "HF_Gorgon"
+    HF_Huyao = "HF_Huyao"
 
 
 class NamedCurveHash:
